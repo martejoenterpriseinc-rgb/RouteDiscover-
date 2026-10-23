@@ -8,6 +8,7 @@ import { fetchRoute } from "@/lib/client";
 import Link from "next/link";
 import { ActiveTripBanner, AddToTripButton } from "@/components/AddToTrip";
 import { Wordmark } from "@/components/AppNav";
+import { Disclosure } from "@/components/Disclosure";
 import { KpiStripLive } from "@/components/KpiStrip";
 import { PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
@@ -97,7 +98,7 @@ function RoutePageInner() {
   const controls = (
     <>
       {!route && (
-        <div className="flex flex-col items-center gap-2 rounded-xl bg-gradient-to-br from-cream to-surface p-4 text-center">
+        <Disclosure id="route-welcome" title="Plan a drive" summary="Pick a start and destination below" className="rounded-xl bg-gradient-to-br from-cream to-surface p-4" bodyClassName="mt-2 flex flex-col items-center gap-2 text-center">
           <span className="brand-plate"><Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={160} height={160} priority className="h-28 w-28" /></span>
           <h1 className="text-lg">
             <Wordmark className="text-2xl" />
@@ -109,7 +110,7 @@ function RoutePageInner() {
           <div className="mt-2 w-full">
             <KpiStripLive compact />
           </div>
-        </div>
+        </Disclosure>
       )}
       <ActiveTripBanner />
       <TripPlanner compact />
@@ -120,7 +121,7 @@ function RoutePageInner() {
       )}
       {route && routeLink && <SendToPhone path={routeLink} title={`${route.origin.label} → ${route.destination.label}`} compact />}
       {route && (
-        <>
+        <Disclosure id="route-filters" title="Filters" summary={`${categories.length} categories${aheadOnly ? " · ahead of me" : ""}`} className="rounded-xl border border-border bg-surface p-3" bodyClassName="mt-2 flex flex-col gap-2">
           <SourceBanner source={search.source} notice={search.notice} />
           <CategoryChips value={categories} onChange={setCategories} />
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -139,20 +140,20 @@ function RoutePageInner() {
             )}
             {myMile != null && <span className="text-xs text-muted">You&apos;re near mile {Math.round(myMile)}</span>}
           </div>
-        </>
+        </Disclosure>
       )}
     </>
   );
 
   const list = !route ? null : (
-    <>
+    <Disclosure
+      id="route-results"
+      title={search.loading ? "Searching along your route…" : `${visible.length} stops within ${trip.radiusMiles} mi`}
+      summary="Results hidden"
+      aside={<span className="text-xs text-muted">sorted by mile marker</span>}
+      bodyClassName="mt-2 flex flex-col gap-3"
+    >
       {search.error && <ErrorNote>{search.error}</ErrorNote>}
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">
-          {search.loading ? "Searching along your route…" : `${visible.length} stops within ${trip.radiusMiles} mi`}
-        </h2>
-        <span className="text-xs text-muted">sorted by mile marker</span>
-      </div>
       {categories.length === 0 && <Empty>Pick at least one category.</Empty>}
       {search.done && visible.length === 0 && !search.error && (
         <Empty>Nothing found for those categories. Try widening the miles-off-route slider or adding categories.</Empty>
@@ -162,7 +163,7 @@ function RoutePageInner() {
           <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<AddToTripButton place={p} />} />
         ))}
       </ul>
-    </>
+    </Disclosure>
   );
 
   return (

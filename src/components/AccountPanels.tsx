@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "./Disclosure";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Preferences } from "@/db/schema";
@@ -12,12 +13,11 @@ import { Button, CategoryChips, ErrorNote, PasswordInput, RadiusSlider, Segmente
 const field = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-base outline-none ring-blue/40 focus:ring-2";
 
 export function Card({ title, children, subtitle }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  const id = `account-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <h2 className="text-lg font-bold">{title}</h2>
-      {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
-      <div className="mt-4 flex flex-col gap-4">{children}</div>
-    </section>
+    <Disclosure id={id} title={title} subtitle={subtitle} size="lg" className="rounded-2xl border border-border bg-surface p-5 shadow-sm" bodyClassName="mt-4 flex flex-col gap-4">
+      {children}
+    </Disclosure>
   );
 }
 

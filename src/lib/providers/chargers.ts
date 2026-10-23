@@ -1,5 +1,6 @@
 import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
-import { DEMO_HOTELS, DEMO_SUPERCHARGERS } from "../demo/data";
+import { DEMO_CHARGERS, DEMO_HOTELS, DEMO_SUPERCHARGERS } from "../demo/data";
+import { type ConnectorType, connectorTypes, detectNetwork, parsePricing, speedTier } from "../ev-networks";
 import { encodePolyline, haversineMiles, simplifyTo } from "../geo";
 import type { Charger, Hotel, LatLng, Place } from "../types";
 import { scopePlaces, searchPlaces, type PlaceSearch } from "./places";
@@ -9,6 +10,16 @@ export type ChargerSearch =
   | { kind: "point"; center: LatLng; radiusMiles: number };
 
 export type LodgingKinds = Array<"hotel" | "campground">;
+
+export type ChargerFilters = {
+  /** Network ids; empty = all. */
+  networks?: string[];
+  /** Connector types; empty = any. */
+  connectors?: ConnectorType[];
+  /** Minimum charger power in kW (0 = any, including Level 2). */
+  minKw?: number;
+  cost?: "any" | "free" | "paid";
+};
 
 /* ------------------------------------------------------------------ */
 /* Open Charge Map                                                     */
@@ -55,14 +66,16 @@ function ocmToCharger(p: OcmPoi): RawCharger | null {
   const a = p.AddressInfo;
   if (!a) return null;
   const operator = p.OperatorInfo?.Title ?? undefined;
-  const isTesla = /tesla/i.test(operator ?? "");
   const conns = p.Connections ?? [];
   const connectors = Array.from(
     new Set(conns.map((c) => c.ConnectionType?.Title).filter((t): t is string => !!t)),
   );
   const maxKw = conns.reduce((m, c) => Math.max(m, c.PowerKW ?? 0), 0) || undefined;
+  const levelHint = conns.reduce((m, c) => Math.max(m, c.Level?.ID ?? 0), 0) || undefined;
   const isFast = conns.some((c) => c.Level?.ID === 3 || (c.PowerKW ?? 0) >= 50);
   const title = a.Title ?? "Charging station";
+  const network = detectNetwork(operator, title);
+  const isTesla = network.id === "tesla";
   const supercharger = isTesla && (isFast || /supercharger/i.test(title) || connectors.some((c) => /supercharger/i.test(c)));
   return {
     id: `ocm-${p.ID}`,
@@ -70,19 +83,23 @@ function ocmToCharger(p: OcmPoi): RawCharger | null {
     lat: a.Latitude,
     lng: a.Longitude,
     operator,
-    network: isTesla ? "tesla" : "other",
+    network: network.id,
+    networkLabel: network.label,
     supercharger,
     stalls: p.NumberOfPoints ?? undefined,
     maxKw,
+    speedTier: speedTier(maxKw, levelHint),
     address: [a.AddressLine1, a.Town, a.StateOrProvince].filter(Boolean).join(", ") || undefined,
     cost: p.UsageCost ?? undefined,
     costTier: classifyCost(p.UsageCost, p.UsageType?.IsPayAtLocation),
+    pricing: parsePricing(p.UsageCost, p.UsageType?.IsPayAtLocation),
     connectors,
+    connectorTypes: connectorTypes(connectors),
     usageTypeId: p.UsageType?.ID,
   };
 }
 
-async function liveOcm(search: ChargerSearch, opts: { teslaOnly: boolean }): Promise<RawCharger[]> {
+async function liveOcm(search: ChargerSearch, opts: { teslaOnly: boolean; fastOnly?: boolean }): Promise<RawCharger[]> {
   const cfg = await getProviderConfig();
   const url = new URL(`${cfg.openChargeMapUrl}/poi/`);
   url.searchParams.set("output", "json");
@@ -101,6 +118,8 @@ async function liveOcm(search: ChargerSearch, opts: { teslaOnly: boolean }): Pro
   if (opts.teslaOnly) {
     // 23 = Tesla (Tesla-only charging), 3534 = Tesla (including non-Tesla)
     url.searchParams.set("operatorid", "23,3534");
+    url.searchParams.set("levelid", "3");
+  } else if (opts.fastOnly) {
     url.searchParams.set("levelid", "3");
   }
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -122,15 +141,87 @@ function demoSuperchargers(): Charger[] {
     lat: s.lat,
     lng: s.lng,
     operator: "Tesla",
-    network: "tesla" as const,
+    network: "tesla",
+    networkLabel: "Tesla Supercharger",
     supercharger: true,
     stalls: s.stalls,
     maxKw: s.maxKw,
+    speedTier: speedTier(s.maxKw),
     address: s.address,
-    cost: "Pay per kWh (Tesla app)",
+    cost: "$0.42/kWh (Tesla app); idle fee $0.50/min when busy",
     costTier: "paid" as const,
+    pricing: parsePricing("$0.42/kWh (Tesla app); idle fee $0.50/min when busy"),
     connectors: ["Tesla Supercharger (NACS)"],
+    connectorTypes: ["nacs"],
   }));
+}
+
+function demoChargers(): Charger[] {
+  return [
+    ...demoSuperchargers(),
+    ...DEMO_CHARGERS.map((s, i) => {
+      const network = detectNetwork(s.operator, s.name);
+      return {
+        id: `demo-ev-${i}`,
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        operator: s.operator,
+        network: network.id,
+        networkLabel: network.label,
+        supercharger: false,
+        stalls: s.stalls,
+        maxKw: s.maxKw,
+        speedTier: speedTier(s.maxKw),
+        address: s.address,
+        cost: s.cost,
+        costTier: classifyCost(s.cost),
+        pricing: parsePricing(s.cost),
+        connectors: s.connectors,
+        connectorTypes: connectorTypes(s.connectors),
+      };
+    }),
+  ];
+}
+
+function stripRaw(c: RawCharger): Charger {
+  const { usageTypeId, ...rest } = c;
+  void usageTypeId;
+  return rest;
+}
+
+/** Apply the user's network / connector / speed / cost filters. */
+export function applyChargerFilters(list: Charger[], f: ChargerFilters): Charger[] {
+  return list.filter((c) => {
+    if (f.networks?.length && !f.networks.includes(c.network)) return false;
+    if (f.connectors?.length && !c.connectorTypes.some((t) => f.connectors!.includes(t))) return false;
+    if (f.minKw && f.minKw > 0) {
+      if (c.maxKw != null) {
+        if (c.maxKw < f.minKw) return false;
+      } else {
+        // No kW published: fall back to the speed tier the source implied.
+        const tier = c.supercharger ? "ultra" : c.speedTier;
+        if (f.minKw >= 150 && tier !== "ultra") return false;
+        if (f.minKw >= 50 && tier !== "ultra" && tier !== "fast") return false;
+        if (f.minKw >= 3 && tier === "level1") return false;
+      }
+    }
+    if (f.cost === "free" && c.costTier !== "free") return false;
+    if (f.cost === "paid" && c.costTier !== "paid") return false;
+    return true;
+  });
+}
+
+/** Every charging network in the area, with the caller's filters applied afterwards. */
+export async function searchChargers(search: ChargerSearch, filters: ChargerFilters = {}) {
+  const fastOnly = (filters.minKw ?? 0) >= 50;
+  const r = await withFallback(
+    "Open Charge Map",
+    async () => (await liveOcm(search, { teslaOnly: false, fastOnly })).map(stripRaw),
+    demoChargers,
+  );
+  const scoped = scopePlaces(r.data, toPlaceSearch(search));
+  return { ...r, data: applyChargerFilters(scoped, filters) };
 }
 
 function toPlaceSearch(search: ChargerSearch): PlaceSearch {
@@ -143,13 +234,7 @@ export async function searchSuperchargers(search: ChargerSearch) {
   const r = await withFallback(
     "Open Charge Map",
     async () =>
-      (await liveOcm(search, { teslaOnly: true }))
-        .filter((c) => c.supercharger)
-        .map((c) => {
-          const { usageTypeId, ...rest } = c;
-          void usageTypeId;
-          return rest;
-        }),
+      (await liveOcm(search, { teslaOnly: true })).filter((c) => c.supercharger).map(stripRaw),
     demoSuperchargers,
   );
   return { ...r, data: scopePlaces(r.data, toPlaceSearch(search)) };

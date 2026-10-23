@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "./Disclosure";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PlaceCard } from "./Cards";
@@ -129,9 +130,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold">Share this trip</h2>
+        <Disclosure id="trip-share" title="Share this trip" className="rounded-2xl border border-border bg-surface p-4 shadow-sm" bodyClassName="mt-2" aside={
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -144,7 +143,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
               />
               Public link
             </label>
-          </div>
+          }>
           {trip.isPublic ? (
             <div className="mt-3">
               <ShareButtons
@@ -180,12 +179,9 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
             <Button type="submit" variant="secondary">Invite</Button>
           </form>
           {inviteMsg && <p className="mt-1 text-xs text-muted">{inviteMsg}</p>}
-        </div>
+        </Disclosure>
 
-        <div>
-          <h2 className="mb-2 font-bold">
-            Stops <span className="text-sm font-normal text-muted">({trip.stops.length})</span>
-          </h2>
+        <Disclosure id="trip-stops" title={<>Stops <span className="text-sm font-normal text-muted">({trip.stops.length})</span></>} summary="Stops hidden" bodyClassName="mt-2">
           {trip.stops.length === 0 ? (
             <Empty>No stops yet. Use “Find stops along this route” and tap “Add to trip” on anything you like.</Empty>
           ) : (
@@ -213,7 +209,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
               ))}
             </ul>
           )}
-        </div>
+        </Disclosure>
       </section>
       <section className="relative min-h-0 flex-1 h-[50vh] md:h-auto">
         <TripMap route={trip.routeGeometry} stops={trip.stops} selectedId={selected} onSelect={setSelected} />

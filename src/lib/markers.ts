@@ -1,4 +1,5 @@
 import { CATEGORY_BY_ID } from "./categories";
+import { networkById, pricingSummary } from "./ev-networks";
 import type { CategoryId, Charger, Hotel, Place } from "./types";
 import type { MapMarker } from "@/components/MapView";
 
@@ -37,8 +38,8 @@ export const chargerMarker = (c: Charger): MapMarker => ({
   lng: c.lng,
   label: c.name,
   emoji: "⚡",
-  color: "#e82127",
-  sub: [c.stalls ? `${c.stalls} stalls` : null, c.maxKw ? `${Math.round(c.maxKw)} kW` : null].filter(Boolean).join(" · "),
+  color: networkById(c.network).color,
+  sub: [c.networkLabel, c.stalls ? `${c.stalls} stalls` : null, c.maxKw ? `${Math.round(c.maxKw)} kW` : null, pricingSummary(c.pricing, c.costTier)].filter(Boolean).join(" · "),
 });
 
 export const hotelMarker = (h: Hotel): MapMarker => ({

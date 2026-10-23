@@ -23,7 +23,7 @@ const FEATURES = [
 
 export default async function LandingPage() {
   const user = await getCurrentUser();
-  if (user) redirect("/app");
+  if (user) redirect("/app/home");
   const s = await getLiveSettings();
   const stats = await getPublicStats();
   const gate = await checkSignup(false);

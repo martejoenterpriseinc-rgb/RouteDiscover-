@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ActiveTripBanner, AddToTripButton } from "@/components/AddToTrip";
+import { Disclosure } from "@/components/Disclosure";
 import { PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { PlaceInput } from "@/components/PlaceInput";
@@ -76,11 +77,8 @@ export default function DestinationPage() {
       }
       list={
         searchKey ? (
-          <>
+          <Disclosure id="destination-results" title={search.loading ? "Searching…" : `${search.data.length} places within ${radius} mi of ${where?.label ?? "there"}`} summary="Results hidden" bodyClassName="mt-2 flex flex-col gap-3">
             {search.error && <ErrorNote>{search.error}</ErrorNote>}
-            <h2 className="font-semibold">
-              {search.loading ? "Searching…" : `${search.data.length} places within ${radius} mi of ${where?.label ?? "there"}`}
-            </h2>
             {search.done && search.data.length === 0 && !search.error && (
               <Empty>No matches. Widen the radius or add categories.</Empty>
             )}
@@ -89,7 +87,7 @@ export default function DestinationPage() {
                 <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<AddToTripButton place={p} />} />
               ))}
             </ul>
-          </>
+          </Disclosure>
         ) : null
       }
       map={

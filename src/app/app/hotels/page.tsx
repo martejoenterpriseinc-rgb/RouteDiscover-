@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ActiveTripBanner, AddToTripButton, hotelAsPlace } from "@/components/AddToTrip";
+import { Disclosure } from "@/components/Disclosure";
 import { HotelCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { PlaceInput } from "@/components/PlaceInput";
@@ -148,8 +149,7 @@ export default function HotelsPage() {
           <RadiusSlider value={radius} min={1} max={40} onChange={setRadius} />
         </div>
       )}
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-muted">Charging</span>
+      <Disclosure id="stays-filters" title="Charging" size="sm" summary={`${chargeFilter === "any" ? "all stays" : chargeFilter}${teslaOnly ? " · Tesla Destination" : ""}`} className="rounded-xl border border-border bg-surface p-3" bodyClassName="mt-2 flex flex-col gap-2">
         <div className="hide-scrollbar overflow-x-auto">
           <Segmented
             label="Charging filter"
@@ -172,7 +172,7 @@ export default function HotelsPage() {
           />
           Tesla Destination charger only ({counts.tesla})
         </label>
-      </div>
+      </Disclosure>
       <SourceBanner source={search.source} notice={search.notice} />
     </div>
   );

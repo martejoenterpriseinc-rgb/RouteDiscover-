@@ -225,6 +225,27 @@ export type DemoCharger = {
   address?: string;
 };
 
+export type DemoOtherCharger = DemoCharger & { operator: string; connectors: string[]; cost: string };
+
+/** Representative non-Tesla fast and Level 2 chargers along the demo corridors (sample data). */
+export const DEMO_CHARGERS: DemoOtherCharger[] = [
+  { name: "Electrify America – Walmart Effingham", lat: 39.1210, lng: -88.5660, stalls: 4, maxKw: 350, address: "Effingham, IL", operator: "Electrify America", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.48/kWh; $0.40/min idle fee after 10 min; Pass+ members $0.36/kWh" },
+  { name: "EVgo – Indianapolis Castleton", lat: 39.9060, lng: -86.0520, stalls: 6, maxKw: 350, address: "Indianapolis, IN", operator: "EVgo Network", connectors: ["CCS (Type 1)", "CHAdeMO", "NACS"], cost: "$0.45/kWh; $1.00 session fee; idle $0.40/min" },
+  { name: "ChargePoint – Dayton Mall", lat: 39.6320, lng: -84.2250, stalls: 4, maxKw: 62.5, address: "Miamisburg, OH", operator: "ChargePoint", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.39/kWh" },
+  { name: "Rivian Adventure Network – Zanesville", lat: 39.9460, lng: -82.0090, stalls: 6, maxKw: 300, address: "Zanesville, OH", operator: "Rivian Adventure Network", connectors: ["CCS (Type 1)"], cost: "$0.47/kWh" },
+  { name: "Sheetz – Breezewood (Electrify America)", lat: 39.9960, lng: -78.2380, stalls: 6, maxKw: 350, address: "Breezewood, PA", operator: "Electrify America", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.48/kWh; idle fee $0.40/min" },
+  { name: "Pilot Travel Center – New Stanton (GM Energy)", lat: 40.2190, lng: -79.6090, stalls: 8, maxKw: 350, address: "New Stanton, PA", operator: "Pilot Flying J", connectors: ["CCS (Type 1)", "NACS"], cost: "$0.49/kWh" },
+  { name: "Francis Energy – Terre Haute", lat: 39.4660, lng: -87.4140, stalls: 2, maxKw: 150, address: "Terre Haute, IN", operator: "Francis Energy", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.42/kWh" },
+  { name: "Blink – Columbus Easton Town Center", lat: 40.0510, lng: -82.9160, stalls: 8, maxKw: 7.2, address: "Columbus, OH", operator: "Blink Charging", connectors: ["J1772"], cost: "$0.29/kWh" },
+  { name: "ChargePoint – Carlisle Public Library", lat: 40.2010, lng: -77.1890, stalls: 2, maxKw: 6.6, address: "Carlisle, PA", operator: "ChargePoint", connectors: ["J1772"], cost: "Free" },
+  { name: "Shell Recharge – Harrisburg Strawberry Square", lat: 40.2630, lng: -76.8830, stalls: 4, maxKw: 50, address: "Harrisburg, PA", operator: "Shell Recharge Solutions", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.44/kWh; $0.30/min idle" },
+  { name: "Mercedes-Benz High-Power Charging – Buc-ee's Richmond", lat: 39.8700, lng: -84.8400, stalls: 8, maxKw: 400, address: "Richmond, IN", operator: "Mercedes-Benz High-Power Charging", connectors: ["CCS (Type 1)", "NACS"], cost: "$0.52/kWh; Mercedes drivers $0.42/kWh" },
+  { name: "IONNA Rechargery – Lancaster", lat: 40.0420, lng: -76.3300, stalls: 10, maxKw: 400, address: "Lancaster, PA", operator: "IONNA", connectors: ["CCS (Type 1)", "NACS"], cost: "$0.46/kWh" },
+  { name: "Wawa – Hershey (Tesla + EA)", lat: 40.2850, lng: -76.6500, stalls: 4, maxKw: 150, address: "Hershey, PA", operator: "Electrify America", connectors: ["CCS (Type 1)"], cost: "$0.48/kWh" },
+  { name: "Springfield Clean Energy Hub (City of Springfield)", lat: 39.7990, lng: -89.6440, stalls: 4, maxKw: 7.2, address: "Springfield, IL", operator: "City of Springfield", connectors: ["J1772"], cost: "Free for 4 hours; $2/hr after" },
+  { name: "7Charge – Youngstown", lat: 41.0980, lng: -80.6490, stalls: 4, maxKw: 100, address: "Youngstown, OH", operator: "7-Eleven 7Charge", connectors: ["CCS (Type 1)", "CHAdeMO"], cost: "$0.41/kWh" },
+];
+
 /** Representative Tesla Supercharger sites along the demo corridors. */
 export const DEMO_SUPERCHARGERS: DemoCharger[] = [
   { name: "Springfield, IL Supercharger", lat: 39.7500, lng: -89.6050, stalls: 8, maxKw: 250, address: "Springfield, IL" },

@@ -6,6 +6,6 @@ import { getCurrentUser } from "@/lib/auth";
 export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage() {
-  if (await getCurrentUser()) redirect("/app");
+  if (await getCurrentUser()) redirect("/app/home");
   return <AuthForm mode="login" />;
 }
