@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <AppNav user={{ name: user.name, email: user.email, role: user.role }} />
       <ApplyPreferences prefs={prefs?.data ?? schema.DEFAULT_PREFERENCES} />
-      <main className="flex-1 flex flex-col pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 flex flex-col">{children}</main>
     </>
   );
 }
