@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BarList, LineChart, StatTile, compact } from "./Charts";
+import { DataSourcesCard } from "./DataSourcesCard";
 import { Badge } from "./ui";
 import type { OwnerStats } from "@/lib/stats";
 
@@ -133,6 +134,8 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
         <LineChart title={`Signups vs. landing visitors (last ${r} days)`} series={[{ name: "Signups", points: s.series.signups }, { name: "Landing views", points: s.series.landingViews }]} />
         <LineChart title={`Subscriptions started vs. store clicks (last ${r} days)`} series={[{ name: "Subscriptions", points: s.series.subscriptionsStarted }, { name: "Store clicks", points: s.series.downloads }]} />
       </div>
+
+      <DataSourcesCard />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <BarList

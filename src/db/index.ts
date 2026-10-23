@@ -3,6 +3,7 @@ import { drizzle as drizzlePg, type NodePgDatabase } from "drizzle-orm/node-post
 import { migrate as migratePg } from "drizzle-orm/node-postgres/migrator";
 import { drizzle as drizzlePglite, type PgliteDatabase } from "drizzle-orm/pglite";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
+import fs from "node:fs";
 import path from "node:path";
 import * as schema from "./schema";
 
@@ -26,6 +27,7 @@ async function connect(): Promise<Db> {
   // Embedded Postgres (PGlite) for development, tests and single-box deploys.
   const { PGlite } = await import("@electric-sql/pglite");
   const dir = process.env.PGLITE_DIR || path.join(process.cwd(), "data", "pglite");
+  if (process.env.PGLITE_DIR !== ":memory:") fs.mkdirSync(dir, { recursive: true });
   const client = process.env.PGLITE_DIR === ":memory:" ? new PGlite() : new PGlite(dir);
   const db = drizzlePglite(client, { schema });
   await migratePglite(db, { migrationsFolder: MIGRATIONS });

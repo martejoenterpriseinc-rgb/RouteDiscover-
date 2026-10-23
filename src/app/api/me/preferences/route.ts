@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { parseCategories } from "@/lib/categories";
 import { parseGeoResult } from "@/lib/api";
 import { body, handle, json } from "@/lib/http";
+import { normalizePhone } from "@/lib/phone";
 
 function sanitize(input: Record<string, unknown>, current: Preferences): Preferences {
   const num = (v: unknown, min: number, max: number, d: number) =>
@@ -21,6 +22,7 @@ function sanitize(input: Record<string, unknown>, current: Preferences): Prefere
     home: input.home === null ? undefined : (parseGeoResult(input.home) ?? current.home),
     walkRadius: num(input.walkRadius, 0.25, 2, current.walkRadius),
     marketingOptIn: typeof input.marketingOptIn === "boolean" ? input.marketingOptIn : current.marketingOptIn,
+    phone: typeof input.phone === "string" ? normalizePhone(input.phone) : current.phone,
   };
 }
 

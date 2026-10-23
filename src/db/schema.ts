@@ -62,6 +62,8 @@ export type Preferences = {
   home?: GeoResult;
   walkRadius: number;
   marketingOptIn: boolean;
+  /** Mobile number for "send to phone" texts (E.164, e.g. +12175550123). */
+  phone?: string;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -379,4 +381,33 @@ export const placesSeen = pgTable(
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("places_seen_provider_idx").on(t.provider)],
+);
+
+/** Monthly call counts per external provider, used to enforce the owner's request caps. */
+export const apiUsage = pgTable(
+  "api_usage",
+  {
+    /** YYYY-MM */
+    month: text("month").notNull(),
+    provider: text("provider").notNull(),
+    kind: text("kind").notNull(),
+    count: integer("count").notNull().default(0),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("api_usage_idx").on(t.month, t.provider, t.kind)],
+);
+
+export const passwordResets = pgTable(
+  "password_resets",
+  {
+    /** sha256 of the token in the link */
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("password_resets_user_idx").on(t.userId)],
 );

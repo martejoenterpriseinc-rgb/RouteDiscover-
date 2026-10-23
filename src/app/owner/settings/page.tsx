@@ -13,6 +13,7 @@ export default function OwnerSettingsPage() {
   const [features, setFeatures] = useState("");
   const [biz, setBiz] = useState<AppSettings["business"] | null>(null);
   const [ref, setRef] = useState<AppSettings["referrals"] | null>(null);
+  const [legal, setLegal] = useState<AppSettings["legal"] | null>(null);
   const [refBonus, setRefBonus] = useState("1.00");
   const [refereeBonus, setRefereeBonus] = useState("0.00");
   const [basicPrice, setBasicPrice] = useState("19.99");
@@ -28,13 +29,14 @@ export default function OwnerSettingsPage() {
     setFeatures(c.state.draft.pricing.features.join("\n"));
     setBiz(c.state.draft.business);
     setRef(c.state.draft.referrals);
+    setLegal(c.state.draft.legal);
     setRefBonus((c.state.draft.referrals.referrerBonusCents / 100).toFixed(2));
     setRefereeBonus((c.state.draft.referrals.refereeBonusCents / 100).toFixed(2));
     setBasicPrice((c.state.draft.business.basicPriceCents / 100).toFixed(2));
     setSponsorPrice((c.state.draft.business.sponsorPriceCents / 100).toFixed(2));
   }
 
-  if (!app || !pricing || !biz || !ref) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
+  if (!app || !pricing || !biz || !ref || !legal) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
 
   const save = () =>
     c.save({
@@ -46,6 +48,7 @@ export default function OwnerSettingsPage() {
         passDays: Math.max(1, Math.min(365, Math.round(Number(pricing.passDays) || 30))),
         features: features.split("\n").map((f) => f.trim()).filter(Boolean),
       },
+      legal: { ...legal, updatedAt: new Date().toISOString().slice(0, 10) },
       referrals: {
         ...ref,
         referrerBonusCents: Math.max(0, Math.round(Number(refBonus || 0) * 100)),
@@ -185,6 +188,17 @@ export default function OwnerSettingsPage() {
         <Field label="X (Twitter)" value={app.socialX} onChange={(v) => setApp({ ...app, socialX: v })} placeholder="https://x.com/routediscover" />
         <Field label="Facebook" value={app.socialFacebook} onChange={(v) => setApp({ ...app, socialFacebook: v })} placeholder="https://facebook.com/routediscover" />
         <Field label="Instagram" value={app.socialInstagram} onChange={(v) => setApp({ ...app, socialInstagram: v })} placeholder="https://instagram.com/routediscover" />
+      </Section>
+
+      <Section title="Terms & privacy" subtitle="Shown at /terms and /privacy, linked from sign-up, the landing page and accounts. Markdown: # heading, ## subheading, - bullets, **bold**, [links](https://…). The “last updated” date is set when you save. Have a lawyer review before launch.">
+        <label className="text-sm sm:col-span-2">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Terms of Service</span>
+          <textarea className={`${field} font-mono text-xs`} rows={12} value={legal.termsMarkdown} onChange={(e) => setLegal({ ...legal, termsMarkdown: e.target.value })} />
+        </label>
+        <label className="text-sm sm:col-span-2">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Privacy Policy</span>
+          <textarea className={`${field} font-mono text-xs`} rows={12} value={legal.privacyMarkdown} onChange={(e) => setLegal({ ...legal, privacyMarkdown: e.target.value })} />
+        </label>
       </Section>
 
       <PublishBar c={c} onSave={save} />

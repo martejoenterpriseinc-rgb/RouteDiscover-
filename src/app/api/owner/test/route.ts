@@ -39,6 +39,7 @@ async function draftSettings(): Promise<AppSettings> {
   i.openChargeMap = { apiKey: decrypt(i.openChargeMap?.apiKey ?? "") || process.env.OPENCHARGEMAP_API_KEY || "" };
   i.google = { ...DEFAULT_SETTINGS.integrations.google, ...i.google, serverKey: decrypt(i.google?.serverKey ?? "") || i.google?.browserKey || process.env.GOOGLE_MAPS_API_KEY || "" };
   i.email = { ...DEFAULT_SETTINGS.integrations.email, ...i.email, apiKey: decrypt(i.email?.apiKey ?? "") || process.env.RESEND_API_KEY || "" };
+  i.sms = { ...DEFAULT_SETTINGS.integrations.sms, ...i.sms, authToken: decrypt(i.sms?.authToken ?? "") || process.env.TWILIO_AUTH_TOKEN || "" };
   i.custom = (i.custom ?? []).map((c) => ({ ...c, authValue: decrypt(c.authValue ?? "") }));
   return merged;
 }
@@ -124,6 +125,15 @@ export async function POST(req: Request) {
           const res = await withTimeout("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${i.email.apiKey}` } });
           if (!res.ok) throw new Error(`Resend HTTP ${res.status}`);
           return `Resend accepted the key.${i.email.from ? "" : " Set a From address."}`;
+        });
+        break;
+      case "sms":
+        result = await timed(async () => {
+          if (i.sms.provider !== "twilio" || !i.sms.accountSid || !i.sms.authToken) throw new Error("Choose Twilio and save the Account SID and auth token first.");
+          const res = await withTimeout(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(i.sms.accountSid)}.json`, { headers: { Authorization: `Basic ${Buffer.from(`${i.sms.accountSid}:${i.sms.authToken}`).toString("base64")}` } });
+          if (!res.ok) throw new Error(`Twilio HTTP ${res.status}`);
+          const j = (await res.json()) as { friendly_name?: string; status?: string };
+          return `Twilio account ${j.friendly_name ?? i.sms.accountSid} (${j.status ?? "ok"}).${i.sms.from ? "" : " Set a From number."}`;
         });
         break;
       case "custom": {

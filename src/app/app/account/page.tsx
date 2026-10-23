@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
-import { Card, InvitePanel, PreferencesForm, ProfileForm, SignOutButton } from "@/components/AccountPanels";
+import { Card, DeleteAccountPanel, InvitePanel, PreferencesForm, ProfileForm, SignOutButton } from "@/components/AccountPanels";
 import { Badge } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { getAccess } from "@/lib/billing";
@@ -66,7 +66,16 @@ export default async function AccountPage() {
             <Link href="/app/business" className="text-sm font-semibold text-blue hover:underline">Open my businesses →</Link>
           </Card>
         </div>
-        <PreferencesForm initial={prefs?.data ?? schema.DEFAULT_PREFERENCES} />
+        <div className="flex flex-col gap-4">
+          <PreferencesForm initial={prefs?.data ?? schema.DEFAULT_PREFERENCES} />
+          <Card title="Your data" subtitle="Download everything RouteDiscover stores about you as a JSON file.">
+            <a href="/api/me/export" className="text-sm font-semibold text-blue hover:underline" download>Download my data →</a>
+          </Card>
+          {user.role !== "owner" && <DeleteAccountPanel />}
+          <p className="text-xs text-muted">
+            <Link className="hover:underline" href="/terms">Terms</Link> · <Link className="hover:underline" href="/privacy">Privacy</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

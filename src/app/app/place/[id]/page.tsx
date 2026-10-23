@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddToTripButton } from "@/components/AddToTrip";
 import { Map } from "@/components/Map";
+import { SendToPhone } from "@/components/SendToPhone";
 import { Badge, Button, ErrorNote } from "@/components/ui";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { appleMapsLink, mapsLink } from "@/lib/client";
@@ -141,6 +142,9 @@ export default function PlacePage() {
             <a className="text-blue hover:underline" href={mapsLink(b, b.name)} target="_blank" rel="noreferrer" onClick={() => trackClick(id, "maps")}>Google Maps</a>
             <a className="text-blue hover:underline" href={appleMapsLink(b, b.name)} target="_blank" rel="noreferrer" onClick={() => trackClick(id, "maps")}>Apple Maps</a>
             <AddToTripButton place={place} />
+          </div>
+          <div className="mt-2">
+            <SendToPhone path={`/app/place/${b.id}`} title={b.name} compact />
           </div>
           <p className="mt-2 text-[11px] text-muted">
             Listing data from {b.provider === "google" ? "Google" : b.provider === "osm" ? "OpenStreetMap" : b.provider === "ocm" ? "Open Charge Map" : b.provider === "demo" ? "sample data" : "online sources"}, synced {new Date(b.sourceSyncedAt).toLocaleDateString()}

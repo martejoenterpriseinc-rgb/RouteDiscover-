@@ -68,12 +68,17 @@ function Form({ mode }: { mode: "login" | "signup" }) {
           minLength={8}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
         />
-        {mode === "signup" && <span className="text-xs text-muted">At least 8 characters.</span>}
+        {mode === "signup" ? <span className="text-xs text-muted">At least 8 characters.</span> : <Link href="/forgot" className="text-xs text-blue hover:underline">Forgot your password?</Link>}
       </label>
       {error && <ErrorNote>{error}</ErrorNote>}
       <Button type="submit" disabled={busy}>
         {busy ? "One moment…" : mode === "signup" ? "Create account" : "Sign in"}
       </Button>
+      {mode === "signup" && (
+        <p className="text-center text-xs text-muted">
+          By creating an account you agree to the <Link className="text-blue hover:underline" href="/terms">Terms</Link> and <Link className="text-blue hover:underline" href="/privacy">Privacy Policy</Link>.
+        </p>
+      )}
       <p className="text-center text-sm text-muted">
         {mode === "signup" ? (
           <>

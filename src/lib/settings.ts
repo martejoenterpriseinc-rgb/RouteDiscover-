@@ -42,6 +42,11 @@ export type AppSettings = {
     stripeProductId: string;
     stripePriceId: string;
   };
+  legal: {
+    termsMarkdown: string;
+    privacyMarkdown: string;
+    updatedAt: string;
+  };
   referrals: {
     enabled: boolean;
     /** Credit for the referrer once the friend qualifies. */
@@ -76,13 +81,25 @@ export type AppSettings = {
      * restrict it by website); the server key powers Places, Routes and
      * Geocoding (restrict it by IP). One key can be used for both.
      */
-    google: { browserKey: string; serverKey: string; mapEnabled: boolean; placesEnabled: boolean; routingEnabled: boolean; geocodingEnabled: boolean; maxRequestsPerSearch: number };
+    google: {
+      browserKey: string;
+      serverKey: string;
+      mapEnabled: boolean;
+      placesEnabled: boolean;
+      routingEnabled: boolean;
+      geocodingEnabled: boolean;
+      maxRequestsPerSearch: number;
+      /** Monthly call caps per API; 0 = unlimited. When a cap is reached the app uses the open providers for the rest of the month. */
+      caps: { places: number; routes: number; geocoding: number; photos: number };
+    };
     openChargeMap: { apiKey: string };
     routing: { osrmUrl: string };
     places: { overpassUrl: string };
     geocoding: { nominatimUrl: string };
     tiles: { url: string; attribution: string };
     email: { provider: "none" | "resend"; apiKey: string; from: string };
+    /** Optional server-sent texts (Twilio). Without it, "send to phone" uses QR codes and the device's own messaging app. */
+    sms: { provider: "none" | "twilio"; accountSid: string; authToken: string; from: string };
     custom: CustomApi[];
   };
 };
@@ -94,6 +111,7 @@ export const SECRET_PATHS = [
   "integrations.google.serverKey",
   "integrations.openChargeMap.apiKey",
   "integrations.email.apiKey",
+  "integrations.sms.authToken",
 ] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -126,6 +144,49 @@ export const DEFAULT_SETTINGS: AppSettings = {
     stripeProductId: "",
     stripePriceId: "",
   },
+  legal: {
+    termsMarkdown: `# Terms of Service
+
+By creating an account or buying a pass you agree to these terms.
+
+## The service
+RouteDiscover helps you find places, chargers and stays along a drive. Listing information comes from online sources and from businesses and travelers; check details such as hours before relying on them. Always follow the road and your vehicle's guidance over anything in the app.
+
+## Accounts and payments
+You are responsible for activity on your account. Passes and subscriptions are billed through Stripe at the prices shown at checkout. Passes are one-time purchases for the number of days shown and are not refundable once used. Subscriptions renew until canceled from your account.
+
+## Content you submit
+Reviews, photos and suggestions you submit must be yours to share and must be accurate and respectful. We may moderate, edit or remove content and may suspend accounts that submit false or abusive material.
+
+## Businesses
+Claiming a listing confirms you are authorized to represent that business. Sponsored placement runs for the period purchased.
+
+## Liability
+The service is provided as is. To the extent allowed by law, we are not liable for indirect or consequential losses.
+
+## Contact
+Questions about these terms: see the support address on our website.`,
+    privacyMarkdown: `# Privacy Policy
+
+## What we collect
+Your name, email and password hash; trips, stops and preferences you save; reviews, photos and suggestions you submit; usage events such as pages viewed and searches made; and, if you allow it, your device's location while you use the app. Payments are processed by Stripe; we never see your full card number.
+
+## How we use it
+To run the service, show you places along your route, bill passes and subscriptions, run the referral program, moderate community updates, and improve the app. We send transactional email (such as password resets and invitations) and, only if you opt in, product updates.
+
+## Sharing
+We share data with the providers that power the app (such as map, places, routing and payment services) only as needed to provide it. We do not sell personal data.
+
+## Your choices
+You can edit your profile and preferences, export your trips, and delete your account from the Account page. Location access can be revoked in your device settings.
+
+## Retention and security
+We keep data while your account is active and delete it when you delete your account, except where we must keep records for payments or legal reasons. API keys and secrets are encrypted at rest.
+
+## Contact
+Privacy questions: see the support address on our website.`,
+    updatedAt: "2026-10-23",
+  },
   referrals: {
     enabled: true,
     referrerBonusCents: 100,
@@ -147,7 +208,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   integrations: {
     stripe: { secretKey: "", publishableKey: "", webhookSecret: "" },
-    google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12 },
+    google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12, caps: { places: 4500, routes: 9000, geocoding: 9000, photos: 9000 } },
     openChargeMap: { apiKey: "" },
     routing: { osrmUrl: "https://router.project-osrm.org" },
     places: { overpassUrl: "https://overpass-api.de/api/interpreter" },
@@ -157,6 +218,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     },
     email: { provider: "none", apiKey: "", from: "" },
+    sms: { provider: "none", accountSid: "", authToken: "", from: "" },
     custom: [],
   },
 };
@@ -238,6 +300,12 @@ function withEnvFallback(s: AppSettings): AppSettings {
         provider: i.email.provider !== "none" ? i.email.provider : env.RESEND_API_KEY ? "resend" : "none",
         apiKey: i.email.apiKey || env.RESEND_API_KEY || "",
         from: i.email.from || env.EMAIL_FROM || "",
+      },
+      sms: {
+        provider: i.sms.provider !== "none" ? i.sms.provider : env.TWILIO_ACCOUNT_SID ? "twilio" : "none",
+        accountSid: i.sms.accountSid || env.TWILIO_ACCOUNT_SID || "",
+        authToken: i.sms.authToken || env.TWILIO_AUTH_TOKEN || "",
+        from: i.sms.from || env.TWILIO_FROM || "",
       },
     },
   };

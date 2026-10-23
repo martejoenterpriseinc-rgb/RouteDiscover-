@@ -19,6 +19,12 @@ export function TripPlanner({ compact = false, onPlanned }: { compact?: boolean;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(!trip.route);
+  // Collapse to the summary when a route arrives from elsewhere (a shared link, a saved trip).
+  const [hadRoute, setHadRoute] = useState(!!trip.route);
+  if (!!trip.route !== hadRoute) {
+    setHadRoute(!!trip.route);
+    if (trip.route) setOpen(false);
+  }
 
   async function locate(): Promise<GeoResult | null> {
     const p = await geo.locate();

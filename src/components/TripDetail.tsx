@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PlaceCard } from "./Cards";
+import { SendToPhone } from "./SendToPhone";
 import { ShareButtons } from "./ShareButtons";
 import { TripMap } from "./TripMap";
 import { Badge, Button, Empty, ErrorNote } from "./ui";
@@ -104,6 +105,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
           {error && <div className="mt-2"><ErrorNote>{error}</ErrorNote></div>}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button onClick={planStops}>🧭 Find stops along this route</Button>
+            <SendToPhone path={trip.isPublic ? `/t/${trip.shareToken}` : `/app/trips/${trip.id}`} title={trip.name} />
             {trip.status !== "completed" ? (
               <Button variant="secondary" disabled={busy} onClick={async () => { const t = await run(() => updateTrip(trip.id, { status: "completed" })); if (t) setTrip(t); }}>
                 ✓ Mark completed
