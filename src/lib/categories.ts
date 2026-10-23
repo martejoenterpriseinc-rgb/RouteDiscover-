@@ -95,6 +95,12 @@ export const CATEGORIES: Category[] = [
     walkable: true,
   },
   {
+    id: "campgrounds",
+    label: "Campgrounds",
+    emoji: "🏕️",
+    osm: [`["tourism"~"^(camp_site|caravan_site)$"]`],
+  },
+  {
     id: "groceries",
     label: "Groceries & Pharmacy",
     emoji: "🛒",
@@ -141,6 +147,7 @@ export function categorize(tags: Record<string, string>): CategoryId | null {
   if (t.amenity === "toilets") return "restrooms";
   if (t.highway === "rest_area" || t.highway === "services") return "rest";
   if (["hotel", "motel", "resort"].includes(t.tourism ?? "")) return "lodging";
+  if (["camp_site", "caravan_site"].includes(t.tourism ?? "")) return "campgrounds";
   if (t.amenity === "cafe" || t.shop === "coffee") return "coffee";
   if (["restaurant", "fast_food", "food_court", "ice_cream"].includes(t.amenity ?? "") || t.shop === "bakery")
     return "food";

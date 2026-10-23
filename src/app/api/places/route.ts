@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { bad, handleError, parseArea, parseCategoryList, readJson } from "@/lib/api";
 import { DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
+import { decorateResults } from "@/lib/business";
 import { searchPlaces } from "@/lib/providers/places";
 
 /** POST { route[] | center, radiusMiles, categories[] } */
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   if (!categories.length) return bad("pick at least one category");
   try {
     const r = await searchPlaces({ ...area, categories });
-    return NextResponse.json(r);
+    return NextResponse.json({ ...r, data: await decorateResults(r.data) });
   } catch (err) {
     return handleError(err);
   }

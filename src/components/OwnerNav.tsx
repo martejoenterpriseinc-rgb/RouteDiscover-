@@ -8,6 +8,8 @@ import { Wordmark } from "./AppNav";
 const TABS = [
   { href: "/owner", label: "Dashboard" },
   { href: "/owner/users", label: "Users" },
+  { href: "/owner/businesses", label: "Businesses" },
+  { href: "/owner/moderation", label: "Moderation" },
   { href: "/owner/settings", label: "Pricing & app" },
   { href: "/owner/integrations", label: "Integrations" },
 ];

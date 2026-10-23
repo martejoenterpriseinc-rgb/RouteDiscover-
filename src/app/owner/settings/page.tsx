@@ -11,6 +11,9 @@ export default function OwnerSettingsPage() {
   const [pricing, setPricing] = useState<AppSettings["pricing"] | null>(null);
   const [price, setPrice] = useState("4.99");
   const [features, setFeatures] = useState("");
+  const [biz, setBiz] = useState<AppSettings["business"] | null>(null);
+  const [basicPrice, setBasicPrice] = useState("19.99");
+  const [sponsorPrice, setSponsorPrice] = useState("49.00");
 
   // Re-seed the form whenever a fresh console state arrives (initial load, save, publish).
   const [seededFrom, setSeededFrom] = useState<typeof c.state>(null);
@@ -20,9 +23,12 @@ export default function OwnerSettingsPage() {
     setPricing(c.state.draft.pricing);
     setPrice((c.state.draft.pricing.monthlyPriceCents / 100).toFixed(2));
     setFeatures(c.state.draft.pricing.features.join("\n"));
+    setBiz(c.state.draft.business);
+    setBasicPrice((c.state.draft.business.basicPriceCents / 100).toFixed(2));
+    setSponsorPrice((c.state.draft.business.sponsorPriceCents / 100).toFixed(2));
   }
 
-  if (!app || !pricing) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
+  if (!app || !pricing || !biz) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
 
   const save = () =>
     c.save({
@@ -32,6 +38,13 @@ export default function OwnerSettingsPage() {
         monthlyPriceCents: Math.max(0, Math.round(Number(price || 0) * 100)),
         trialDays: Math.max(0, Math.min(90, Math.round(Number(pricing.trialDays) || 0))),
         features: features.split("\n").map((f) => f.trim()).filter(Boolean),
+      },
+      business: {
+        ...biz,
+        basicPriceCents: Math.max(0, Math.round(Number(basicPrice || 0) * 100)),
+        sponsorPriceCents: Math.max(0, Math.round(Number(sponsorPrice || 0) * 100)),
+        sponsorDays: Math.max(1, Math.min(365, Math.round(Number(biz.sponsorDays) || 30))),
+        flagThreshold: Math.max(1, Math.min(20, Math.round(Number(biz.flagThreshold) || 5))),
       },
     });
 
@@ -74,6 +87,34 @@ export default function OwnerSettingsPage() {
         <label className="text-sm sm:col-span-2">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">What&apos;s included (one per line, shown on the landing page and checkout)</span>
           <textarea className={field} rows={5} value={features} onChange={(e) => setFeatures(e.target.value)} />
+        </label>
+      </Section>
+
+      <Section
+        title="Business plans"
+        subtitle="What businesses pay to claim their listing. Basic is a monthly subscription; Sponsored is a one-time payment for top placement over a set number of days (it includes Basic for that period)."
+        aside={biz.stripeBasicPriceId ? <Badge tone="free">Synced to Stripe</Badge> : <Badge>Not yet in Stripe</Badge>}
+      >
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Basic monitoring, per month</span>
+          <div className="flex items-center gap-2"><span className="text-lg font-bold">$</span><input className={field} type="number" min="0" step="0.01" value={basicPrice} onChange={(e) => setBasicPrice(e.target.value)} /></div>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Sponsored placement, one-time</span>
+          <div className="flex items-center gap-2"><span className="text-lg font-bold">$</span><input className={field} type="number" min="0" step="0.01" value={sponsorPrice} onChange={(e) => setSponsorPrice(e.target.value)} /></div>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Sponsored time at the top (days per purchase)</span>
+          <input className={field} type="number" min="1" max="365" value={biz.sponsorDays} onChange={(e) => setBiz({ ...biz, sponsorDays: Number(e.target.value) })} />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Hold customer updates for your audit at risk score ≥</span>
+          <input className={field} type="number" min="1" max="20" value={biz.flagThreshold} onChange={(e) => setBiz({ ...biz, flagThreshold: Number(e.target.value) })} />
+          <span className="mt-1 block text-xs text-muted">Lower is stricter. Links, new accounts, rapid-fire posting, abusive language and “closed” hour changes add points.</span>
+        </label>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" className="h-4 w-4" checked={biz.requirePayment} onChange={(e) => setBiz({ ...biz, requirePayment: e.target.checked })} />
+          Require payment to claim a business (when off, or until Stripe is connected, claims are granted free)
         </label>
       </Section>
 

@@ -51,4 +51,4 @@ export function AddToTripButton({ place }: { place: Place }) {
 }
 
 export const chargerAsPlace = (c: Charger): Place => ({ id: c.id, name: c.name, category: "ev", lat: c.lat, lng: c.lng, address: c.address, alongMiles: c.alongMiles, detourMiles: c.detourMiles, distanceMiles: c.distanceMiles });
-export const hotelAsPlace = (h: Hotel): Place => ({ id: h.id, name: h.name, category: "lodging", lat: h.lat, lng: h.lng, address: h.address, website: h.website, phone: h.phone, alongMiles: h.alongMiles, detourMiles: h.detourMiles, distanceMiles: h.distanceMiles });
+export const hotelAsPlace = (h: Hotel): Place => ({ id: h.id, name: h.name, category: h.kind === "campground" ? "campgrounds" : "lodging", lat: h.lat, lng: h.lng, address: h.address, website: h.website, phone: h.phone, alongMiles: h.alongMiles, detourMiles: h.detourMiles, distanceMiles: h.distanceMiles });

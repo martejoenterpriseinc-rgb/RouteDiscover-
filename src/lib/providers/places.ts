@@ -1,6 +1,6 @@
 import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { CATEGORY_BY_ID, categorize } from "../categories";
-import { DEMO_PLACES } from "../demo/data";
+import { DEMO_HOTELS, DEMO_PLACES, DEMO_SUPERCHARGERS } from "../demo/data";
 import { METERS_PER_MILE, distanceToRoute, haversineMiles, indexRoute, simplifyTo } from "../geo";
 import type { CategoryId, LatLng, Place } from "../types";
 
@@ -75,7 +75,8 @@ async function livePlaces(search: PlaceSearch): Promise<Place[]> {
 }
 
 function demoPlaces(search: PlaceSearch): Place[] {
-  return DEMO_PLACES.filter((p) => search.categories.includes(p.category)).map((p, i) => ({
+  // Ids use the position in DEMO_PLACES so they stay stable across category filters.
+  return DEMO_PLACES.map((p, i) => ({
     id: `demo-place-${i}`,
     name: p.name,
     category: p.category,
@@ -83,7 +84,7 @@ function demoPlaces(search: PlaceSearch): Place[] {
     lng: p.lng,
     address: p.address,
     website: p.website,
-  }));
+  })).filter((p) => search.categories.includes(p.category));
 }
 
 /** Attach distance fields and drop anything outside the search area. */
@@ -104,4 +105,64 @@ export function scopePlaces<T extends LatLng>(items: T[], search: PlaceSearch): 
 export async function searchPlaces(search: PlaceSearch) {
   const r = await withFallback("Places", () => livePlaces(search), () => demoPlaces(search));
   return { ...r, data: scopePlaces(r.data, search) };
+}
+
+/* ------------------------------------------------------------------ */
+/* Lookup a single place by provider id (used by listings & sync)      */
+/* ------------------------------------------------------------------ */
+
+async function liveLookup(id: string): Promise<Place | null> {
+  const m = /^osm-(node|way|relation)-(\d+)$/.exec(id);
+  if (!m) throw new Error("not an OpenStreetMap id");
+  const cfg = await getProviderConfig();
+  const q = `[out:json][timeout:20];${m[1]}(${m[2]});out center tags;`;
+  const res = await fetchWithTimeout(cfg.overpassUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `data=${encodeURIComponent(q)}`,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = (await res.json()) as { elements: OverpassElement[] };
+  const el = json.elements[0];
+  if (!el) return null;
+  const lat = el.lat ?? el.center?.lat;
+  const lng = el.lon ?? el.center?.lon;
+  const tags = el.tags ?? {};
+  if (lat == null || lng == null) return null;
+  return {
+    id,
+    name: tags.name ?? "Unnamed place",
+    category: categorize(tags) ?? "attractions",
+    lat,
+    lng,
+    address: addressOf(tags),
+    website: tags.website || tags["contact:website"],
+    phone: tags.phone || tags["contact:phone"],
+    openingHours: tags.opening_hours,
+    tags,
+  };
+}
+
+function demoLookup(id: string): Place | null {
+  let m = /^demo-place-(\d+)$/.exec(id);
+  if (m) {
+    const p = DEMO_PLACES[Number(m[1])];
+    return p ? { id, name: p.name, category: p.category, lat: p.lat, lng: p.lng, address: p.address, website: p.website } : null;
+  }
+  m = /^demo-hotel-(\d+)$/.exec(id);
+  if (m) {
+    const h = DEMO_HOTELS[Number(m[1])];
+    return h ? { id, name: h.name, category: h.kind === "campground" ? "campgrounds" : "lodging", lat: h.lat, lng: h.lng, address: h.address } : null;
+  }
+  m = /^demo-sc-(\d+)$/.exec(id);
+  if (m) {
+    const c = DEMO_SUPERCHARGERS[Number(m[1])];
+    return c ? { id, name: c.name, category: "ev", lat: c.lat, lng: c.lng, address: c.address } : null;
+  }
+  return null;
+}
+
+export async function lookupPlace(id: string) {
+  if (id.startsWith("demo-")) return { source: "demo" as const, data: demoLookup(id) };
+  return withFallback("Places", () => liveLookup(id), () => demoLookup(id));
 }

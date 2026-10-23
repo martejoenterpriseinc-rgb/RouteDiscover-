@@ -8,6 +8,8 @@ export type ChargerSearch =
   | { kind: "corridor"; route: LatLng[]; radiusMiles: number }
   | { kind: "point"; center: LatLng; radiusMiles: number };
 
+export type LodgingKinds = Array<"hotel" | "campground">;
+
 /* ------------------------------------------------------------------ */
 /* Open Charge Map                                                     */
 /* ------------------------------------------------------------------ */
@@ -199,6 +201,7 @@ function hotelFromPlace(p: Place): Hotel {
   return {
     id: p.id,
     name: p.name,
+    kind: p.category === "campgrounds" ? "campground" : "hotel",
     lat: p.lat,
     lng: p.lng,
     address: p.address,
@@ -226,17 +229,20 @@ function mergeAccess(a: Hotel["chargerAccess"], b: Hotel["chargerAccess"]): Hote
   return "unknown";
 }
 
-async function liveHotels(search: ChargerSearch): Promise<Hotel[]> {
+async function liveHotels(search: ChargerSearch, kinds: LodgingKinds): Promise<Hotel[]> {
   const ps = toPlaceSearch(search);
+  const cats: Array<"lodging" | "campgrounds" | "ev"> = ["ev"];
+  if (kinds.includes("hotel")) cats.push("lodging");
+  if (kinds.includes("campground")) cats.push("campgrounds");
   const [placesRes, ocm] = await Promise.all([
-    searchPlaces({ ...ps, categories: ["lodging", "ev"], limit: 800 }),
+    searchPlaces({ ...ps, categories: cats, limit: 800 }),
     liveOcm(search, { teslaOnly: false }).catch(() => [] as RawCharger[]),
   ]);
   if (placesRes.source !== "live") throw new Error("places provider unavailable");
   const hotels = new Map<string, Hotel>();
   const osmChargers: Place[] = [];
   for (const p of placesRes.data) {
-    if (p.category === "lodging") hotels.set(p.id, hotelFromPlace(p));
+    if (p.category === "lodging" || p.category === "campgrounds") hotels.set(p.id, hotelFromPlace(p));
     else if (p.category === "ev") osmChargers.push(p);
   }
   const list = Array.from(hotels.values());
@@ -272,10 +278,11 @@ async function liveHotels(search: ChargerSearch): Promise<Hotel[]> {
   for (const c of ocm) {
     if (c.supercharger) continue;
     let h = nearestHotel(c);
-    if (!h && HOTEL_NAME_RE.test(c.name)) {
+    if (!h && kinds.includes("hotel") && HOTEL_NAME_RE.test(c.name)) {
       h = {
         id: c.id,
         name: c.name.replace(/\s*[-–(].*$/, "").trim() || c.name,
+        kind: "hotel",
         lat: c.lat,
         lng: c.lng,
         address: c.address,
@@ -301,11 +308,11 @@ async function liveHotels(search: ChargerSearch): Promise<Hotel[]> {
   return list;
 }
 
-function demoHotels(): Hotel[] {
-  return DEMO_HOTELS.map((h, i) => ({ id: `demo-hotel-${i}`, ...h }));
+function demoHotels(kinds: LodgingKinds): Hotel[] {
+  return DEMO_HOTELS.map((h, i) => ({ id: `demo-hotel-${i}`, ...h, kind: h.kind ?? "hotel" })).filter((h) => kinds.includes(h.kind));
 }
 
-export async function searchHotels(search: ChargerSearch) {
-  const r = await withFallback("Hotels", () => liveHotels(search), demoHotels);
+export async function searchHotels(search: ChargerSearch, kinds: LodgingKinds = ["hotel"]) {
+  const r = await withFallback("Hotels", () => liveHotels(search, kinds), () => demoHotels(kinds));
   return { ...r, data: scopePlaces(r.data, toPlaceSearch(search)) };
 }

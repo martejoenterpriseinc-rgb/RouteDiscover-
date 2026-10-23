@@ -18,6 +18,10 @@ const EVENT_LABEL: Record<string, string> = {
   download_click: "Store badge clicked",
   pwa_installed: "Installed to home screen",
   settings_published: "Settings went live",
+  business_claimed: "Business claimed",
+  sponsor_purchased: "Sponsorship purchased",
+  submission_created: "Customer update submitted",
+  user_banned: "User banned",
 };
 
 export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
@@ -87,6 +91,22 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
         <p className="mt-2 text-xs text-muted">
           Store downloads themselves are reported by App Store Connect and Google Play Console; connect those under Integrations → Custom APIs once the native apps ship.
         </p>
+      </section>
+
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Businesses</h2>
+          <div className="flex gap-3 text-xs font-semibold">
+            <Link href="/owner/businesses" className="text-blue hover:underline">All businesses →</Link>
+            <Link href="/owner/moderation" className="text-blue hover:underline">Moderation queue →</Link>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Business revenue" value={money(s.businesses.revenueCents, s.subscriptions.currency)} sub={`${money(s.businesses.revenueInRangeCents, s.subscriptions.currency)} in the last ${r} days`} accent />
+          <StatTile label="Claimed businesses" value={s.businesses.claimed} sub={`+${s.businesses.claimedInRange} in ${r}d · ${s.businesses.listings} listings viewed`} />
+          <StatTile label="Sponsors (active)" value={s.businesses.sponsors} sub={`${s.businesses.basic} on Basic monitoring`} />
+          <StatTile label="Updates awaiting review" value={s.businesses.pendingSubmissions} sub={`${s.businesses.flaggedSubmissions} held for your audit · ${s.businesses.approvedInRange} approved / ${s.businesses.rejectedInRange} rejected in ${r}d`} />
+        </div>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import { getDb, schema } from "@/db";
 import type { SubscriptionStatus, User } from "@/db/schema";
+import { grantPlan, setBasicPlanStatus } from "./business";
 import { track } from "./events";
 import { getLiveSettings, patchLiveAndDraft, type AppSettings } from "./settings";
 
@@ -61,6 +62,58 @@ export async function syncStripePrice(): Promise<{ productId: string; priceId: s
   }
   await patchLiveAndDraft({ pricing: { stripeProductId: productId, stripePriceId: priceId } });
   return { productId, priceId, created };
+}
+
+/** Stripe product + prices for the two business plans (Basic recurring, Sponsor one-time). */
+export async function syncBusinessPrices(): Promise<{ basicPriceId: string; sponsorPriceId: string }> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  if (!stripe) throw new Error("Stripe secret key is not configured.");
+  const b = s.business;
+  let productId = b.stripeProductId;
+  if (productId) {
+    const existing = await stripe.products.retrieve(productId).catch(() => null);
+    if (!existing || existing.deleted) productId = "";
+  }
+  if (!productId) {
+    const product = await stripe.products.create({ name: `${s.app.name} for businesses`, description: "Claim your listing, edit what travelers see, monitor traffic, and sponsor placement." });
+    productId = product.id;
+  }
+  const ensure = async (priceId: string, amount: number, recurring: boolean): Promise<string> => {
+    if (priceId) {
+      const existing = await stripe.prices.retrieve(priceId).catch(() => null);
+      const matches = existing && existing.active && existing.unit_amount === amount && existing.currency === s.pricing.currency.toLowerCase() && existing.product === productId && (recurring ? existing.recurring?.interval === "month" : !existing.recurring);
+      if (matches) return priceId;
+      if (existing?.active) await stripe.prices.update(priceId, { active: false }).catch(() => null);
+    }
+    const price = await stripe.prices.create({ product: productId, unit_amount: amount, currency: s.pricing.currency.toLowerCase(), ...(recurring ? { recurring: { interval: "month" } } : {}) });
+    return price.id;
+  };
+  const basicPriceId = await ensure(b.stripeBasicPriceId, b.basicPriceCents, true);
+  const sponsorPriceId = await ensure(b.stripeSponsorPriceId, b.sponsorPriceCents, false);
+  await patchLiveAndDraft({ business: { stripeProductId: productId, stripeBasicPriceId: basicPriceId, stripeSponsorPriceId: sponsorPriceId } });
+  return { basicPriceId, sponsorPriceId };
+}
+
+export async function createBusinessCheckout(user: User, businessId: string, plan: "basic" | "sponsor", origin: string): Promise<string> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  const priceId = plan === "basic" ? s.business.stripeBasicPriceId : s.business.stripeSponsorPriceId;
+  if (!stripe || !priceId) throw new Error("Business billing is not set up yet.");
+  const customer = await ensureCustomer(stripe, user);
+  const metadata = { kind: `business_${plan}`, businessId, userId: user.id };
+  const session = await stripe.checkout.sessions.create({
+    mode: plan === "basic" ? "subscription" : "payment",
+    customer,
+    line_items: [{ price: priceId, quantity: 1 }],
+    metadata,
+    ...(plan === "basic" ? { subscription_data: { metadata } } : {}),
+    success_url: `${origin}/app/business/${businessId}?checkout=success`,
+    cancel_url: `${origin}/app/business/claim/${businessId}?checkout=canceled`,
+  });
+  await track("checkout_started", { userId: user.id, meta: { kind: metadata.kind, businessId } });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+  return session.url;
 }
 
 export async function ensureCustomer(stripe: Stripe, user: User): Promise<string> {
@@ -160,11 +213,29 @@ export async function handleStripeEvent(event: { type: string; data: { object: u
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
-      const status = await applySubscription(event.data.object as SubLike);
+      const sub = event.data.object as SubLike;
+      if (sub.metadata?.kind === "business_basic") {
+        const active = ["active", "trialing", "past_due"].includes(sub.status);
+        await setBasicPlanStatus(sub.id, active ? "active" : "canceled");
+        return `business plan ${sub.status}`;
+      }
+      const status = await applySubscription(sub);
       return status ? `subscription ${status}` : "subscription ignored (unknown customer)";
     }
     case "checkout.session.completed": {
-      const session = event.data.object as { subscription?: string | null; customer?: string | null };
+      const session = event.data.object as { id: string; subscription?: string | null; customer?: string | null; metadata?: Record<string, string> | null; amount_total?: number | null; currency?: string | null };
+      const kind = session.metadata?.kind;
+      if ((kind === "business_basic" || kind === "business_sponsor") && session.metadata?.businessId && session.metadata.userId) {
+        await grantPlan({
+          businessId: session.metadata.businessId,
+          userId: session.metadata.userId,
+          plan: kind === "business_basic" ? "basic" : "sponsor",
+          stripeRef: kind === "business_basic" && session.subscription ? session.subscription : session.id,
+          amountCents: session.amount_total ?? 0,
+          currency: session.currency ?? "usd",
+        });
+        return `${kind} granted`;
+      }
       if (session.subscription) {
         const stripe = await getStripe();
         if (stripe) {

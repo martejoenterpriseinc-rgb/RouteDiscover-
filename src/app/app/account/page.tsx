@@ -56,6 +56,9 @@ export default async function AccountPage() {
             )}
           </Card>
           <InvitePanel referralCode={user.referralCode} origin={origin} />
+          <Card title="Your businesses" subtitle="Claimed a listing? Edit it, sync it, see traffic and review customer updates.">
+            <Link href="/app/business" className="text-sm font-semibold text-blue hover:underline">Open my businesses →</Link>
+          </Card>
         </div>
         <PreferencesForm initial={prefs?.data ?? schema.DEFAULT_PREFERENCES} />
       </div>

@@ -24,6 +24,16 @@ RouteDiscover was born on a drive from Illinois to Lancaster, PA, where finding 
 
 Categories: food, coffee, attractions, outdoors, historic, shopping, antiques & thrift, entertainment, kids, hotels, gas, EV charging, rest areas, restrooms, groceries & pharmacy.
 
+### For businesses
+
+| Area | What it does |
+| --- | --- |
+| **Listing page** | Every search result opens a full listing: address, hours, phone, website, description, specials, menu, photos, and reviews with ratings, with the data source and sync date shown. |
+| **"This is my business"** | Claim a listing with one of two paid plans the owner prices: **Basic monitoring** (monthly) or **Sponsored placement** (one payment buys a set number of days at the top of every search that includes the business, marked "Sponsored", plus everything in Basic). Payment goes through Stripe Checkout; until Stripe is connected claims are granted free and labelled as such. |
+| **Business account** (`/app/business`) | Edit everything travelers see (overrides sit on top of the synced data and can be cleared), **Sync from online** to refresh the synced layer, **traffic** (listing views, search impressions, website/map/call clicks, trip adds, daily chart), a **customer updates queue** with approve/reject, and sponsor purchase/extension. |
+| **Community updates** | Signed-in travelers can write reviews, add photos, post menus and specials, suggest hours, and suggest corrections. Every submission is risk-scored (new account, links, rapid posting, abusive language, "closed" hour changes, contact-detail changes, repeat rejections) and goes to the business queue; anything at or above the owner-set threshold is held for the RouteDiscover owner only. Approved hours/corrections update the listing; approved reviews, photos, menus and specials become visible. |
+| **Campground finder** | The Stays screen (formerly Hotels) searches hotels, campgrounds, or both, with the same EV-charging flags (free vs paid, Tesla Destination, RV hookups where tagged). |
+
 ### For the owner
 
 | Area | What it does |
@@ -32,7 +42,9 @@ Categories: food, coffee, attractions, outdoors, historic, shopping, antiques & 
 | **Subscriptions** | Recurring monthly billing through **Stripe** Checkout with an optional free trial, a customer portal for cancellations, and webhooks that keep access in sync. Access to the app can be gated on an active subscription. |
 | **Dashboard** (`/owner`) | Revenue (MRR, active, trialing, past due, canceled, churn, conversion), users (total, new, active today / week / month, logins), downloads & acquisition (store badge clicks, home-screen installs, landing visitors, visitor→signup rate, invites, referrals), engagement (trips, stops, shares), daily charts, recent activity, and a launch checklist. |
 | **Users** | Every account with subscription status, trip count, join date and last activity. |
-| **Pricing & app** | Set the monthly price, currency, free-trial days, whether a subscription is required, the feature list, app name/tagline, support email, store links and social links. |
+| **Pricing & app** | Set the monthly price, currency, free-trial days, whether a subscription is required, the feature list, app name/tagline, support email, store links and social links. Business plans: Basic monthly price, Sponsored price, **sponsored days per purchase**, the moderation hold threshold, and whether claims require payment. |
+| **Businesses** | Every claimed listing with its plan (Sponsor / Basic / lapsed), who claimed it, whether they paid via Stripe or were granted free, revenue, and a Revoke action. Totals for claims, sponsors, Basic subscribers and business revenue. |
+| **Moderation** | The audit queue for all community updates with risk flags and submitter history; approve, reject, or ban a user (which rejects their pending updates). Filters for pending, held-for-audit, approved, rejected. |
 | **Integrations** ("connect any API") | Stripe, Open Charge Map, routing, places, geocoding, map tiles, email (Resend), plus **custom APIs** (name, base URL, auth header). Each has **Test connection**. Save as a draft with **Update and save**, then **Go live** to publish; going live also creates or verifies the Stripe price. Secrets are encrypted at rest and masked in the console. |
 
 The **first account created becomes the owner**. Owner pages live under `/owner` and the API under `/api/owner/*`.

@@ -17,7 +17,8 @@ export type CategoryId =
   | "ev"
   | "rest"
   | "restrooms"
-  | "groceries";
+  | "groceries"
+  | "campgrounds";
 
 export type Category = {
   id: CategoryId;
@@ -62,6 +63,12 @@ export type Place = {
   phone?: string;
   openingHours?: string;
   tags?: Record<string, string>;
+  /* Listing layer (claimed businesses, sponsorship, community ratings) */
+  listingId?: string;
+  claimed?: boolean;
+  sponsored?: boolean;
+  rating?: number;
+  reviewCount?: number;
 };
 
 export type Charger = {
@@ -84,9 +91,12 @@ export type Charger = {
   distanceMiles?: number;
 };
 
+export type LodgingKind = "hotel" | "campground";
+
 export type Hotel = {
   id: string;
   name: string;
+  kind: LodgingKind;
   lat: number;
   lng: number;
   address?: string;
@@ -105,6 +115,11 @@ export type Hotel = {
   detourMiles?: number;
   alongMiles?: number;
   distanceMiles?: number;
+  listingId?: string;
+  claimed?: boolean;
+  sponsored?: boolean;
+  rating?: number;
+  reviewCount?: number;
 };
 
 export type ApiEnvelope<T> = {

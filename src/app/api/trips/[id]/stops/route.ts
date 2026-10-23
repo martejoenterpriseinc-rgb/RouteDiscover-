@@ -3,6 +3,7 @@ import { isCategoryId } from "@/lib/categories";
 import { parseLatLng } from "@/lib/api";
 import { body, fail, handle, json, str } from "@/lib/http";
 import { getTrip, updateTrip, withStop } from "@/lib/trips";
+import { track } from "@/lib/events";
 import type { Place } from "@/lib/types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -40,6 +41,7 @@ export async function POST(req: Request, { params }: Ctx) {
     if (trip.stops.length >= 200) return fail("That's a lot of stops. Trips hold up to 200.");
     const stops = withStop(trip, place, str(b.note, 500) || undefined);
     const updated = await updateTrip(user.id, id, { stops });
+    if (stops.length !== trip.stops.length) await track("stop_added", { userId: user.id, meta: { placeId: place.id, tripId: id } });
     return json({ trip: updated, added: stops.length !== trip.stops.length });
   } catch (err) {
     return handle(err);

@@ -17,6 +17,8 @@ import type { GeoResult, Hotel, LatLng } from "@/lib/types";
 
 type Scope = "route" | "destination" | "place";
 type ChargeFilter = "any" | "charger" | "free" | "paid";
+type StayKind = "hotel" | "campground" | "both";
+const KINDS: Record<StayKind, Array<"hotel" | "campground">> = { hotel: ["hotel"], campground: ["campground"], both: ["hotel", "campground"] };
 const NO_HOTELS: Hotel[] = [];
 
 export default function HotelsPage() {
@@ -26,6 +28,7 @@ export default function HotelsPage() {
   const [place, setPlace] = useState<GeoResult | undefined>();
   const [radius, setRadius] = useState(10);
   const [chargeFilter, setChargeFilter] = useState<ChargeFilter>("charger");
+  const [stay, setStay] = useState<StayKind>("hotel");
   const [teslaOnly, setTeslaOnly] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -34,13 +37,13 @@ export default function HotelsPage() {
     scope === "destination" ? (trip.destination ?? null) : scope === "place" ? (place ?? null) : null;
 
   const areaKey =
-    scope === "route"
+    (scope === "route"
       ? route
         ? `r:${route.origin.lat},${route.origin.lng}>${route.destination.lat},${route.destination.lng}:${trip.radiusMiles}`
         : ""
       : center
         ? `p:${center.lat},${center.lng}:${radius}`
-        : "";
+        : "") + ((scope === "route" ? !!route : !!center) ? `|${stay}` : "");
 
   const search = useSearch(
     areaKey,
@@ -49,6 +52,7 @@ export default function HotelsPage() {
         scope === "route" && route
           ? { route: route.geometry, radiusMiles: trip.radiusMiles }
           : { center: center!, radiusMiles: radius },
+        KINDS[stay],
       ),
     NO_HOTELS,
   );
@@ -82,12 +86,24 @@ export default function HotelsPage() {
     <div className="flex flex-col gap-3">
       <ActiveTripBanner />
       <div className="rounded-xl border border-border bg-surface p-3">
-        <h1 className="font-semibold">🏨 Hotels with EV charging</h1>
+        <h1 className="font-semibold">🏨 Hotels & 🏕️ campgrounds with EV charging</h1>
         <p className="mt-1 text-xs text-muted">
-          Sleep where you can plug in. Free vs. paid charging, Tesla Destination chargers, and guest-only
-          access, all flagged.
+          Sleep where you can plug in. Free vs. paid charging, Tesla Destination chargers, RV hookups, and
+          guest-only access, all flagged.
         </p>
         <div className="mt-3">
+          <Segmented
+            label="Stay type"
+            value={stay}
+            onChange={setStay}
+            options={[
+              { value: "hotel", label: "Hotels" },
+              { value: "campground", label: "Campgrounds" },
+              { value: "both", label: "Both" },
+            ]}
+          />
+        </div>
+        <div className="mt-2">
           <Segmented
             label="Where"
             value={scope}
@@ -167,8 +183,8 @@ export default function HotelsPage() {
       {areaKey && (
         <h2 className="font-semibold">
           {search.loading
-            ? "Finding hotels…"
-            : `${visible.length} hotel${visible.length === 1 ? "" : "s"} ${
+            ? "Searching…"
+            : `${visible.length} ${stay === "campground" ? "campground" : stay === "both" ? "stay" : "hotel"}${visible.length === 1 ? "" : "s"} ${
                 scope === "route" ? `within ${trip.radiusMiles} mi of your route` : `within ${radius} mi`
               }`}
         </h2>

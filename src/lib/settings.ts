@@ -38,6 +38,20 @@ export type AppSettings = {
     stripeProductId: string;
     stripePriceId: string;
   };
+  business: {
+    /** Basic monitoring plan, billed monthly. */
+    basicPriceCents: number;
+    /** Sponsored placement: one payment buys `sponsorDays` at the top of results (plus everything in Basic). */
+    sponsorPriceCents: number;
+    sponsorDays: number;
+    /** When false (or when Stripe is not connected) claims are granted without payment. */
+    requirePayment: boolean;
+    stripeBasicPriceId: string;
+    stripeSponsorPriceId: string;
+    stripeProductId: string;
+    /** Risk score at or above which a submission is held for the RouteDiscover owner. */
+    flagThreshold: number;
+  };
   integrations: {
     stripe: { secretKey: string; publishableKey: string; webhookSecret: string };
     openChargeMap: { apiKey: string };
@@ -84,6 +98,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
     ],
     stripeProductId: "",
     stripePriceId: "",
+  },
+  business: {
+    basicPriceCents: 1999,
+    sponsorPriceCents: 4900,
+    sponsorDays: 30,
+    requirePayment: true,
+    stripeBasicPriceId: "",
+    stripeSponsorPriceId: "",
+    stripeProductId: "",
+    flagThreshold: 5,
   },
   integrations: {
     stripe: { secretKey: "", publishableKey: "", webhookSecret: "" },

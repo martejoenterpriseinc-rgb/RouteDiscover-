@@ -261,6 +261,7 @@ export const DEMO_SUPERCHARGERS: DemoCharger[] = [
 
 export type DemoHotel = {
   name: string;
+  kind?: "hotel" | "campground";
   lat: number;
   lng: number;
   address?: string;
@@ -307,4 +308,18 @@ export const DEMO_HOTELS: DemoHotel[] = [
   { name: "President Abraham Lincoln Springfield - DoubleTree", lat: 39.8010, lng: -89.6470, address: "Springfield, IL", brand: "Hilton", hasCharger: true, chargerTier: "paid", chargerAccess: "public", teslaDestination: false, connectors: ["J1772"], chargerCount: 2 },
   { name: "The Drake Chicago", lat: 41.9000, lng: -87.6240, address: "Chicago, IL", brand: "Hilton", hasCharger: true, chargerTier: "paid", chargerAccess: "public", teslaDestination: false, connectors: ["J1772"], chargerCount: 2, chargerNotes: "Valet garage" },
   { name: "Hotel Indigo Chicago Downtown", lat: 41.8960, lng: -87.6280, address: "Chicago, IL", brand: "IHG", hasCharger: false, chargerTier: "unknown", chargerAccess: "unknown", teslaDestination: false, connectors: [] },
+  // Campgrounds (representative; verify before relying on them)
+  { name: "Lancaster / New Holland KOA Holiday", kind: "campground", lat: 40.1050, lng: -76.1000, address: "New Holland, PA", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["J1772", "NEMA 14-50"], chargerCount: 2, chargerNotes: "EV charging at select RV sites" },
+  { name: "Old Mill Stream Campground", kind: "campground", lat: 40.0330, lng: -76.2180, address: "Lancaster, PA", hasCharger: true, chargerTier: "free", chargerAccess: "guests", teslaDestination: false, connectors: ["NEMA 14-50"], chargerCount: 4, chargerNotes: "50-amp RV hookups usable with a mobile connector" },
+  { name: "Hersheypark Camping Resort", kind: "campground", lat: 40.3050, lng: -76.6150, address: "Hummelstown, PA", hasCharger: false, chargerTier: "unknown", chargerAccess: "unknown", teslaDestination: false, connectors: [] },
+  { name: "Gettysburg / Battlefield KOA", kind: "campground", lat: 39.8100, lng: -77.2800, address: "Gettysburg, PA", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["J1772"], chargerCount: 2 },
+  { name: "Harrisburg East Campground", kind: "campground", lat: 40.2300, lng: -76.7800, address: "Harrisburg, PA", hasCharger: false, chargerTier: "unknown", chargerAccess: "unknown", teslaDestination: false, connectors: [] },
+  { name: "Pine Grove Campground (Somerset)", kind: "campground", lat: 40.0200, lng: -79.1100, address: "Somerset, PA", hasCharger: true, chargerTier: "free", chargerAccess: "guests", teslaDestination: true, connectors: ["Tesla Destination", "NEMA 14-50"], chargerCount: 2 },
+  { name: "Pittsburgh North / Cranberry KOA", kind: "campground", lat: 40.7200, lng: -80.0900, address: "Cranberry Township, PA", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["J1772"], chargerCount: 2 },
+  { name: "Streetsboro / Cleveland SE KOA", kind: "campground", lat: 41.2600, lng: -81.3200, address: "Streetsboro, OH", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["J1772", "NEMA 14-50"], chargerCount: 2 },
+  { name: "Sandusky / Bayshore KOA", kind: "campground", lat: 41.4300, lng: -82.7700, address: "Sandusky, OH", brand: "KOA", hasCharger: false, chargerTier: "unknown", chargerAccess: "unknown", teslaDestination: false, connectors: [] },
+  { name: "Indiana Dunes State Park Campground", kind: "campground", lat: 41.6600, lng: -87.0600, address: "Chesterton, IN", hasCharger: false, chargerTier: "unknown", chargerAccess: "unknown", teslaDestination: false, connectors: [] },
+  { name: "Elkhart Campground", kind: "campground", lat: 41.7200, lng: -85.9400, address: "Elkhart, IN", hasCharger: true, chargerTier: "free", chargerAccess: "guests", teslaDestination: false, connectors: ["NEMA 14-50"], chargerCount: 6 },
+  { name: "Indianapolis KOA Holiday", kind: "campground", lat: 39.8800, lng: -85.9900, address: "Greenfield, IN", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["J1772"], chargerCount: 2 },
+  { name: "Springfield KOA (Rochester)", kind: "campground", lat: 39.7400, lng: -89.5300, address: "Rochester, IL", brand: "KOA", hasCharger: true, chargerTier: "paid", chargerAccess: "guests", teslaDestination: false, connectors: ["NEMA 14-50"], chargerCount: 4 },
 ];

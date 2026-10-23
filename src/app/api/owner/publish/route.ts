@@ -2,7 +2,7 @@ import { requireOwner } from "@/lib/auth";
 import { track } from "@/lib/events";
 import { handle, json } from "@/lib/http";
 import { getDraftForConsole, getLiveSettings, publishDraft } from "@/lib/settings";
-import { syncStripePrice } from "@/lib/stripe";
+import { syncBusinessPrices, syncStripePrice } from "@/lib/stripe";
 
 /** "Go live": promote the draft, then make sure Stripe carries the published price. */
 export async function POST() {
@@ -17,6 +17,11 @@ export async function POST() {
         stripe = await syncStripePrice();
       } catch (err) {
         warnings.push(`Stripe price sync failed: ${err instanceof Error ? err.message : "unknown error"}`);
+      }
+      try {
+        await syncBusinessPrices();
+      } catch (err) {
+        warnings.push(`Business plan price sync failed: ${err instanceof Error ? err.message : "unknown error"}`);
       }
     } else if (live.pricing.requireSubscription) {
       warnings.push("Subscriptions are required but Stripe is not connected, so everyone still gets free access.");

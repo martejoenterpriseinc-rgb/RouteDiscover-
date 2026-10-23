@@ -30,7 +30,7 @@ export const fetchPlaces = (area: Area, categories: CategoryId[]) =>
 
 export const fetchChargers = (area: Area) => post<Charger[]>("/api/chargers", area);
 
-export const fetchHotels = (area: Area) => post<Hotel[]>("/api/hotels", area);
+export const fetchHotels = (area: Area, kinds: Array<"hotel" | "campground"> = ["hotel"]) => post<Hotel[]>("/api/hotels", { ...area, kinds });
 
 export function mapsLink(p: LatLng, name?: string) {
   const q = name ? `${p.lat},${p.lng}(${encodeURIComponent(name)})` : `${p.lat},${p.lng}`;

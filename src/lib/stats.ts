@@ -11,6 +11,7 @@ export type OwnerStats = {
   subscriptions: { active: number; trialing: number; pastDue: number; canceled: number; cancelingAtPeriodEnd: number; mrrCents: number; priceCents: number; currency: string; churnRatePct: number; conversionPct: number };
   acquisition: { landingViews: number; landingVisitors: number; storeClicksIos: number; storeClicksAndroid: number; pwaInstallClicks: number; pwaInstalled: number; visitorToSignupPct: number; invitesSent: number; invitesAccepted: number; referredSignups: number };
   engagement: { trips: number; tripsInRange: number; tripsCompleted: number; tripsShared: number; stops: number; shares: number; logins: number };
+  businesses: { listings: number; claimed: number; claimedInRange: number; basic: number; sponsors: number; revenueCents: number; revenueInRangeCents: number; pendingSubmissions: number; flaggedSubmissions: number; submissionsInRange: number; approvedInRange: number; rejectedInRange: number };
   series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[] };
   recent: Array<{ id: number; type: string; userEmail: string | null; meta: Record<string, unknown>; createdAt: string }>;
   setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean };
@@ -105,12 +106,33 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
   const shares = await eventCount("trip_shared");
   const logins = await eventCount("login", since);
 
+  // Businesses
+  const bizRows = await db.select({ id: schema.businesses.id, claimStatus: schema.businesses.claimStatus, claimedAt: schema.businesses.claimedAt, sponsorUntil: schema.businesses.sponsorUntil }).from(schema.businesses);
+  const planRows = await db.select().from(schema.businessPlans);
+  const nowMs = Date.now();
+  const activeBasic = new Set(planRows.filter((p) => p.plan === "basic" && p.status === "active" && (!p.endsAt || p.endsAt.getTime() > nowMs)).map((p) => p.businessId));
+  const sponsors = bizRows.filter((b) => b.sponsorUntil && b.sponsorUntil.getTime() > nowMs).length;
+  const businesses = {
+    listings: bizRows.length,
+    claimed: bizRows.filter((b) => b.claimStatus === "claimed").length,
+    claimedInRange: bizRows.filter((b) => b.claimStatus === "claimed" && b.claimedAt && b.claimedAt >= since).length,
+    basic: bizRows.filter((b) => activeBasic.has(b.id) && !(b.sponsorUntil && b.sponsorUntil.getTime() > nowMs)).length,
+    sponsors,
+    revenueCents: planRows.filter((p) => p.status !== "pending").reduce((sum, p) => sum + p.amountCents, 0),
+    revenueInRangeCents: planRows.filter((p) => p.status !== "pending" && p.createdAt >= since).reduce((sum, p) => sum + p.amountCents, 0),
+    pendingSubmissions: await n(db.select({ c: count() }).from(schema.submissions).where(eq(schema.submissions.status, "pending"))),
+    flaggedSubmissions: await n(db.select({ c: count() }).from(schema.submissions).where(and(eq(schema.submissions.status, "pending"), eq(schema.submissions.flagged, true)))),
+    submissionsInRange: await n(db.select({ c: count() }).from(schema.submissions).where(gte(schema.submissions.createdAt, since))),
+    approvedInRange: await n(db.select({ c: count() }).from(schema.submissions).where(and(eq(schema.submissions.status, "approved"), gte(schema.submissions.createdAt, since)))),
+    rejectedInRange: await n(db.select({ c: count() }).from(schema.submissions).where(and(eq(schema.submissions.status, "rejected"), gte(schema.submissions.createdAt, since)))),
+  };
+
   // Recent activity
   const recentRows = await db
     .select({ id: schema.events.id, type: schema.events.type, meta: schema.events.meta, createdAt: schema.events.createdAt, userEmail: schema.users.email })
     .from(schema.events)
     .leftJoin(schema.users, eq(schema.events.userId, schema.users.id))
-    .where(inArray(schema.events.type, ["signup", "subscription_started", "subscription_canceled", "subscription_payment_failed", "trip_created", "trip_shared", "invite_sent", "download_click", "pwa_installed", "settings_published"]))
+    .where(inArray(schema.events.type, ["signup", "subscription_started", "subscription_canceled", "subscription_payment_failed", "trip_created", "trip_shared", "invite_sent", "download_click", "pwa_installed", "settings_published", "business_claimed", "sponsor_purchased", "submission_created", "user_banned"]))
     .orderBy(desc(schema.events.id))
     .limit(20);
 
@@ -121,6 +143,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
     subscriptions: { active, trialing, pastDue, canceled, cancelingAtPeriodEnd, mrrCents, priceCents: s.pricing.monthlyPriceCents, currency: s.pricing.currency, churnRatePct, conversionPct },
     acquisition: { landingViews, landingVisitors, storeClicksIos, storeClicksAndroid, pwaInstallClicks, pwaInstalled, visitorToSignupPct, invitesSent, invitesAccepted, referredSignups },
     engagement: { trips, tripsInRange, tripsCompleted, tripsShared, stops, shares, logins },
+    businesses,
     series: {
       signups: await series("signup"),
       landingViews: await series("landing_view"),

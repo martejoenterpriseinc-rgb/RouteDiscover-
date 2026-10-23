@@ -17,7 +17,16 @@ export type EventType =
   | "subscription_canceled"
   | "subscription_payment_failed"
   | "route_search"
-  | "settings_published";
+  | "settings_published"
+  | "business_view"
+  | "business_impression"
+  | "business_click"
+  | "business_claimed"
+  | "sponsor_purchased"
+  | "stop_added"
+  | "submission_created"
+  | "submission_moderated"
+  | "user_banned";
 
 export async function track(
   type: EventType,

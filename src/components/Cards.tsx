@@ -5,6 +5,8 @@ import { appleMapsLink, mapsLink } from "@/lib/client";
 import { fmtMiles } from "@/lib/geo";
 import type { Charger, Hotel, Place } from "@/lib/types";
 import { Badge } from "./ui";
+import { DetailsButton } from "./DetailsButton";
+import { chargerAsPlace, hotelAsPlace } from "./AddToTrip";
 
 function Distance({ item }: { item: { detourMiles?: number; alongMiles?: number; distanceMiles?: number } }) {
   if (item.alongMiles != null) {
@@ -47,16 +49,18 @@ function Card({
   selected,
   onClick,
   children,
+  sponsored,
 }: {
   selected?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
+  sponsored?: boolean;
 }) {
   return (
     <li
       onClick={onClick}
       className={`cursor-pointer rounded-xl border bg-surface p-3 shadow-sm transition ${
-        selected ? "border-orange ring-2 ring-orange/40" : "border-border hover:border-blue"
+        selected ? "border-orange ring-2 ring-orange/40" : sponsored ? "border-orange/60 bg-cream/60 hover:border-orange" : "border-border hover:border-blue"
       }`}
     >
       {children}
@@ -64,10 +68,21 @@ function Card({
   );
 }
 
-export function PlaceCard({ place, selected, onClick, action }: { place: Place; selected?: boolean; onClick?: () => void; action?: React.ReactNode }) {
+function ListingBadges({ item }: { item: { sponsored?: boolean; claimed?: boolean; rating?: number; reviewCount?: number } }) {
+  if (!item.sponsored && !item.claimed && !item.rating) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {item.sponsored && <Badge tone="paid">★ Sponsored</Badge>}
+      {item.claimed && <Badge tone="blue">✓ Verified by owner</Badge>}
+      {item.rating ? <Badge tone="free">★ {item.rating.toFixed(1)} ({item.reviewCount})</Badge> : null}
+    </div>
+  );
+}
+
+export function PlaceCard({ place, selected, onClick, action, details = true }: { place: Place; selected?: boolean; onClick?: () => void; action?: React.ReactNode; details?: boolean }) {
   const cat = CATEGORY_BY_ID[place.category];
   return (
-    <Card selected={selected} onClick={onClick}>
+    <Card selected={selected} onClick={onClick} sponsored={place.sponsored}>
       <div className="flex items-start gap-3">
         <span className="text-2xl leading-none" aria-hidden>
           {cat.emoji}
@@ -81,9 +96,15 @@ export function PlaceCard({ place, selected, onClick, action }: { place: Place; 
             {cat.label}
             {place.address ? ` · ${place.address}` : ""}
           </p>
+          <ListingBadges item={place} />
           {place.openingHours && <p className="mt-1 text-xs text-muted">Hours: {place.openingHours}</p>}
           <Links item={place} />
-          {action && <div className="mt-2">{action}</div>}
+          {(action || details) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {details && <DetailsButton place={place} listingId={place.listingId} />}
+              {action}
+            </div>
+          )}
         </div>
       </div>
     </Card>
@@ -109,7 +130,10 @@ export function ChargerCard({ charger, selected, onClick, action }: { charger: C
           </div>
           {charger.address && <p className="mt-1 text-xs text-muted">{charger.address}</p>}
           <Links item={charger} />
-          {action && <div className="mt-2">{action}</div>}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <DetailsButton place={chargerAsPlace(charger)} />
+            {action}
+          </div>
         </div>
       </div>
     </Card>
@@ -119,10 +143,10 @@ export function ChargerCard({ charger, selected, onClick, action }: { charger: C
 export function HotelCard({ hotel, selected, onClick, action }: { hotel: Hotel; selected?: boolean; onClick?: () => void; action?: React.ReactNode }) {
   const tier = hotel.chargerTier;
   return (
-    <Card selected={selected} onClick={onClick}>
+    <Card selected={selected} onClick={onClick} sponsored={hotel.sponsored}>
       <div className="flex items-start gap-3">
         <span className="text-2xl leading-none" aria-hidden>
-          🏨
+          {hotel.kind === "campground" ? "🏕️" : "🏨"}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
@@ -145,14 +169,18 @@ export function HotelCard({ hotel, selected, onClick, action }: { hotel: Hotel; 
             )}
           </div>
           <p className="mt-1 text-xs text-muted">
-            {[hotel.brand, hotel.address].filter(Boolean).join(" · ")}
+            {[hotel.kind === "campground" ? "Campground" : null, hotel.brand, hotel.address].filter(Boolean).join(" · ")}
           </p>
+          <ListingBadges item={hotel} />
           {hotel.hasCharger && hotel.connectors.length > 0 && (
             <p className="mt-1 text-xs text-muted">Connectors: {hotel.connectors.join(", ")}</p>
           )}
           {hotel.chargerNotes && <p className="mt-1 text-xs text-muted">Note: {hotel.chargerNotes}</p>}
           <Links item={hotel} />
-          {action && <div className="mt-2">{action}</div>}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <DetailsButton place={hotelAsPlace(hotel)} listingId={hotel.listingId} />
+            {action}
+          </div>
         </div>
       </div>
     </Card>
