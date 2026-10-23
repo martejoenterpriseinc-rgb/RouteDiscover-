@@ -4,8 +4,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/AppNav";
 import { DownloadButtons } from "@/components/Landing";
+import { KpiStrip } from "@/components/KpiStrip";
 import { getCurrentUser } from "@/lib/auth";
 import { track } from "@/lib/events";
+import { getPublicStats } from "@/lib/public-stats";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
@@ -21,6 +23,7 @@ export default async function LandingPage() {
   const user = await getCurrentUser();
   if (user) redirect("/app");
   const s = await getLiveSettings();
+  const stats = await getPublicStats();
   const anonId = (await cookies()).get("rd_anon")?.value ?? null;
   void track("landing_view", { anonId });
 
@@ -71,6 +74,9 @@ export default async function LandingPage() {
             </p>
             <div className="mt-6">
               <DownloadButtons appStoreUrl={s.app.appStoreUrl} playStoreUrl={s.app.playStoreUrl} compact />
+            </div>
+            <div className="mt-8">
+              <KpiStrip stats={stats} />
             </div>
           </div>
           <div className="flex justify-center">

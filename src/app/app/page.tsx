@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ActiveTripBanner, AddToTripButton } from "@/components/AddToTrip";
 import { Wordmark } from "@/components/AppNav";
+import { KpiStripLive } from "@/components/KpiStrip";
 import { PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { SplitLayout } from "@/components/SplitLayout";
@@ -70,6 +71,9 @@ export default function RoutePage() {
             Plan a drive, pick how many miles off the highway you&apos;re willing to go, and see everything
             worth stopping for along the way.
           </p>
+          <div className="mt-2 w-full">
+            <KpiStripLive compact />
+          </div>
         </div>
       )}
       <ActiveTripBanner />
