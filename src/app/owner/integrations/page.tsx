@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { Field, PublishBar, Section, TestButton, field, useOwnerConsole } from "@/components/OwnerConsole";
 import { Badge, Button } from "@/components/ui";
+import { DataSourcesCard } from "@/components/DataSourcesCard";
 import type { AppSettings, CustomApi } from "@/lib/settings";
 
 type I = AppSettings["integrations"];
@@ -41,6 +42,8 @@ export default function OwnerIntegrationsPage() {
         </p>
       </div>
 
+      <DataSourcesCard compact />
+
       <Section
         title="Stripe (billing)"
         subtitle="Recurring monthly subscriptions, free trials, customer portal and cancellations."
@@ -71,6 +74,18 @@ export default function OwnerIntegrationsPage() {
             </label>
           ))}
         </div>
+        <div className="rounded-xl border border-border bg-background p-3 sm:col-span-2">
+          <p className="text-sm font-semibold">Monthly caps (0 = unlimited)</p>
+          <p className="text-xs text-muted">Stay inside Google&apos;s free allowance: when a cap is reached the app uses the free OpenStreetMap providers until the month rolls over. Google&apos;s free tier is per API and changes; set these a little under the current allowance and also set a quota in Google Cloud as a backstop.</p>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(["places", "routes", "geocoding", "photos"] as const).map((k) => (
+              <label key={k} className="text-sm">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">{k}</span>
+                <input className={field} type="number" min="0" value={i.google.caps[k]} onChange={(e) => set("google", { caps: { ...i.google.caps, [k]: Math.max(0, Number(e.target.value)) } })} />
+              </label>
+            ))}
+          </div>
+        </div>
         <label className="text-sm">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Max Places requests per route search</span>
           <input className={field} type="number" min="1" max="60" value={i.google.maxRequestsPerSearch} onChange={(e) => set("google", { maxRequestsPerSearch: Number(e.target.value) })} />
@@ -96,8 +111,20 @@ export default function OwnerIntegrationsPage() {
           <TestButton target="geocoding" />
         </div>
         <div className="flex items-end justify-between gap-2 sm:col-span-2">
-          <Field label="Map tiles URL template" value={i.tiles.url} onChange={(v) => set("tiles", { url: v })} wide hint="Use {z}/{x}/{y}; MapTiler, Stadia or Thunderforest for production." />
+          <Field label="Map tiles URL template" value={i.tiles.url} onChange={(v) => set("tiles", { url: v })} wide hint="Use {z}/{x}/{y}. Used whenever Google Maps is off or unavailable." />
           <TestButton target="tiles" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs sm:col-span-2">
+          <span className="text-muted">Presets with free tiers:</span>
+          {[
+            { label: "OpenStreetMap (public, light use)", url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
+            { label: "Stadia Maps (free tier, add key)", url: "https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}.png?api_key=YOUR_KEY", attr: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
+            { label: "MapTiler (free tier, add key)", url: "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=YOUR_KEY", attr: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' },
+          ].map((p) => (
+            <button key={p.label} type="button" className="rounded-full border border-border bg-surface px-2 py-0.5 hover:border-blue" onClick={() => set("tiles", { url: p.url, attribution: p.attr })}>
+              {p.label}
+            </button>
+          ))}
         </div>
         <Field label="Tiles attribution (HTML)" value={i.tiles.attribution} onChange={(v) => set("tiles", { attribution: v })} wide />
       </Section>

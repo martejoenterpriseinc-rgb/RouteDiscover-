@@ -76,7 +76,17 @@ export type AppSettings = {
      * restrict it by website); the server key powers Places, Routes and
      * Geocoding (restrict it by IP). One key can be used for both.
      */
-    google: { browserKey: string; serverKey: string; mapEnabled: boolean; placesEnabled: boolean; routingEnabled: boolean; geocodingEnabled: boolean; maxRequestsPerSearch: number };
+    google: {
+      browserKey: string;
+      serverKey: string;
+      mapEnabled: boolean;
+      placesEnabled: boolean;
+      routingEnabled: boolean;
+      geocodingEnabled: boolean;
+      maxRequestsPerSearch: number;
+      /** Monthly call caps per API; 0 = unlimited. When a cap is reached the app uses the open providers for the rest of the month. */
+      caps: { places: number; routes: number; geocoding: number; photos: number };
+    };
     openChargeMap: { apiKey: string };
     routing: { osrmUrl: string };
     places: { overpassUrl: string };
@@ -147,7 +157,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   integrations: {
     stripe: { secretKey: "", publishableKey: "", webhookSecret: "" },
-    google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12 },
+    google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12, caps: { places: 4500, routes: 9000, geocoding: 9000, photos: 9000 } },
     openChargeMap: { apiKey: "" },
     routing: { osrmUrl: "https://router.project-osrm.org" },
     places: { overpassUrl: "https://overpass-api.de/api/interpreter" },

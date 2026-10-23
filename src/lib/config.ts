@@ -21,7 +21,7 @@ export const config = {
   fetchTimeoutMs: Number(process.env.ROUTEDISCOVER_FETCH_TIMEOUT_MS || 25000),
 };
 
-export type GoogleConfig = { serverKey: string; places: boolean; routing: boolean; geocoding: boolean; maxRequestsPerSearch: number };
+export type GoogleConfig = { serverKey: string; places: boolean; routing: boolean; geocoding: boolean; maxRequestsPerSearch: number; caps: { places: number; routes: number; geocoding: number; photos: number } };
 
 export type ProviderConfig = {
   google: GoogleConfig;
@@ -43,6 +43,7 @@ export async function getProviderConfig(): Promise<ProviderConfig> {
       routing: !!serverKey && g.routingEnabled,
       geocoding: !!serverKey && g.geocodingEnabled,
       maxRequestsPerSearch: Math.max(1, Math.min(60, g.maxRequestsPerSearch || 12)),
+      caps: { ...{ places: 4500, routes: 9000, geocoding: 9000, photos: 9000 }, ...(g.caps ?? {}) },
     },
     osrmUrl: s.integrations.routing.osrmUrl.replace(/\/$/, ""),
     overpassUrl: s.integrations.places.overpassUrl,

@@ -4,6 +4,7 @@
  * back to the OpenStreetMap providers when a call fails.
  */
 import { fetchWithTimeout, getProviderConfig, type GoogleConfig } from "../config";
+import { consume } from "../usage";
 import { decodePolyline, haversineMiles, indexRoute, pointAtMile, simplifyTo } from "../geo";
 import type { CategoryId, GeoResult, LatLng, Place, RouteResult } from "../types";
 
@@ -117,6 +118,8 @@ const MAX_RADIUS_M = 50_000;
 const cache = new Map<string, { at: number; data: Place[] }>();
 const CACHE_TTL_MS = 60 * 60_000;
 
+let capFor = { places: 0, routes: 0, geocoding: 0, photos: 0 };
+
 async function nearby(key: string, center: LatLng, radiusM: number, types: string[]): Promise<Place[]> {
   const cacheKey = `${center.lat.toFixed(3)},${center.lng.toFixed(3)},${radiusM},${types.join("|")}`;
   const hit = cache.get(cacheKey);
@@ -124,6 +127,7 @@ async function nearby(key: string, center: LatLng, radiusM: number, types: strin
   const out: Place[] = [];
   // Nearby Search allows up to 50 included types per request.
   for (let i = 0; i < types.length; i += 50) {
+    await consume("google", "places", capFor.places);
     const json = await google<{ places?: GooglePlace[] }>("https://places.googleapis.com/v1/places:searchNearby", key, {
       method: "POST",
       fieldMask: SEARCH_FIELDS,
@@ -163,6 +167,7 @@ export function samplePoints(route: LatLng[], radiusMiles: number, maxPoints: nu
 
 export async function googlePlaces(cfg: GoogleConfig, search: { kind: "point"; center: LatLng; radiusMiles: number; categories: CategoryId[] } | { kind: "corridor"; route: LatLng[]; radiusMiles: number; categories: CategoryId[] }): Promise<Place[]> {
   if (!cfg.places) throw new Error("Google Places not enabled");
+  capFor = cfg.caps;
   const types = Array.from(new Set(search.categories.flatMap((c) => GOOGLE_TYPES[c])));
   const seen = new Map<string, Place>();
   const add = (list: Place[]) => {
@@ -183,6 +188,7 @@ export async function googleLookup(cfg: GoogleConfig, id: string): Promise<Place
   const m = /^google-(.+)$/.exec(id);
   if (!m) throw new Error("not a Google place id");
   if (!cfg.serverKey) throw new Error("Google key not configured");
+  await consume("google", "places", cfg.caps.places);
   const json = await google<GooglePlace>(`https://places.googleapis.com/v1/places/${encodeURIComponent(m[1])}`, cfg.serverKey, { fieldMask: DETAIL_FIELDS });
   return toPlace(json);
 }
@@ -191,6 +197,7 @@ export async function googleLookup(cfg: GoogleConfig, id: string): Promise<Place
 export async function googlePhoto(photoName: string, maxWidthPx: number): Promise<Response> {
   const cfg = await getProviderConfig();
   if (!cfg.google.serverKey) throw new Error("Google key not configured");
+  await consume("google", "photos", cfg.google.caps.photos);
   const url = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${Math.min(1600, Math.max(100, maxWidthPx))}&key=${encodeURIComponent(cfg.google.serverKey)}`;
   const res = await fetchWithTimeout(url, { redirect: "follow" });
   if (!res.ok) throw new Error(`Google photo HTTP ${res.status}`);
@@ -203,6 +210,7 @@ export async function googlePhoto(photoName: string, maxWidthPx: number): Promis
 
 export async function googleGeocode(cfg: GoogleConfig, q: string, limit: number): Promise<GeoResult[]> {
   if (!cfg.geocoding) throw new Error("Google Geocoding not enabled");
+  await consume("google", "geocoding", cfg.caps.geocoding);
   const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
   url.searchParams.set("address", q);
   url.searchParams.set("region", "us");
@@ -216,6 +224,7 @@ export async function googleGeocode(cfg: GoogleConfig, q: string, limit: number)
 
 export async function googleRoute(cfg: GoogleConfig, origin: GeoResult, destination: GeoResult): Promise<Omit<RouteResult, "source">> {
   if (!cfg.routing) throw new Error("Google Routes not enabled");
+  await consume("google", "routes", cfg.caps.routes);
   const json = await google<{ routes?: Array<{ distanceMeters: number; duration: string; polyline: { encodedPolyline: string } }> }>("https://routes.googleapis.com/directions/v2:computeRoutes", cfg.serverKey, {
     method: "POST",
     fieldMask: "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",

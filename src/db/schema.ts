@@ -380,3 +380,17 @@ export const placesSeen = pgTable(
   },
   (t) => [index("places_seen_provider_idx").on(t.provider)],
 );
+
+/** Monthly call counts per external provider, used to enforce the owner's request caps. */
+export const apiUsage = pgTable(
+  "api_usage",
+  {
+    /** YYYY-MM */
+    month: text("month").notNull(),
+    provider: text("provider").notNull(),
+    kind: text("kind").notNull(),
+    count: integer("count").notNull().default(0),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("api_usage_idx").on(t.month, t.provider, t.kind)],
+);
