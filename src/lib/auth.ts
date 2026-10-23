@@ -67,6 +67,12 @@ export async function createUser(input: { email: string; name: string; password:
     .returning();
   await db.insert(schema.preferences).values({ userId: user.id, data: schema.DEFAULT_PREFERENCES });
   await track("signup", { userId: user.id, meta: { role, referred: !!input.referredBy } });
+  if (input.referredBy) {
+    const { createReferral } = await import("./referrals");
+    await createReferral(input.referredBy, user.id);
+  }
+  const { grantSignupTrial } = await import("./billing");
+  await grantSignupTrial(user.id);
   invalidatePublicStats();
   return user;
 }

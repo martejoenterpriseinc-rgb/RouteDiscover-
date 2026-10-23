@@ -30,13 +30,30 @@ export type AppSettings = {
     socialInstagram: string;
   };
   pricing: {
+    /** "pass": one-time charge for `passDays` of access. "subscription": renews monthly. */
+    model: "pass" | "subscription";
     monthlyPriceCents: number;
+    passDays: number;
     currency: string;
+    trialEnabled: boolean;
     trialDays: number;
     requireSubscription: boolean;
     features: string[];
     stripeProductId: string;
     stripePriceId: string;
+  };
+  referrals: {
+    enabled: boolean;
+    /** Credit for the referrer once the friend qualifies. */
+    referrerBonusCents: number;
+    /** Credit for the new customer once they qualify (0 = none). */
+    refereeBonusCents: number;
+    /** Paid periods (passes or monthly payments) the friend must complete. */
+    qualifyingPayments: number;
+    /** Only users with an active pass/subscription can share a referral link. */
+    referrerMustBePaid: boolean;
+    promoTitle: string;
+    promoText: string;
   };
   business: {
     /** Basic monitoring plan, billed monthly. */
@@ -85,8 +102,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     socialInstagram: "",
   },
   pricing: {
+    model: "pass",
     monthlyPriceCents: 499,
+    passDays: 30,
     currency: "usd",
+    trialEnabled: false,
     trialDays: 7,
     requireSubscription: true,
     features: [
@@ -98,6 +118,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
     ],
     stripeProductId: "",
     stripePriceId: "",
+  },
+  referrals: {
+    enabled: true,
+    referrerBonusCents: 100,
+    refereeBonusCents: 0,
+    qualifyingPayments: 2,
+    referrerMustBePaid: true,
+    promoTitle: "Share RouteDiscover, earn credit",
+    promoText: "Every friend who joins with your link and pays for 2 months of use earns you $1 off your next pass.",
   },
   business: {
     basicPriceCents: 1999,

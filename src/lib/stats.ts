@@ -1,6 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getDb, schema } from "@/db";
+import { referralProgramStats, type ReferralProgramStats } from "./referrals";
 import { getLiveSettings } from "./settings";
 
 export type DailyPoint = { day: string; value: number };
@@ -11,6 +12,8 @@ export type OwnerStats = {
   subscriptions: { active: number; trialing: number; pastDue: number; canceled: number; cancelingAtPeriodEnd: number; mrrCents: number; priceCents: number; currency: string; churnRatePct: number; conversionPct: number };
   acquisition: { landingViews: number; landingVisitors: number; storeClicksIos: number; storeClicksAndroid: number; pwaInstallClicks: number; pwaInstalled: number; visitorToSignupPct: number; invitesSent: number; invitesAccepted: number; referredSignups: number };
   engagement: { trips: number; tripsInRange: number; tripsCompleted: number; tripsShared: number; stops: number; shares: number; logins: number };
+  referrals: ReferralProgramStats;
+  passes: { sold: number; soldInRange: number; revenueCents: number; revenueInRangeCents: number; trialsActive: number; model: "pass" | "subscription" };
   businesses: { listings: number; claimed: number; claimedInRange: number; basic: number; sponsors: number; revenueCents: number; revenueInRangeCents: number; pendingSubmissions: number; flaggedSubmissions: number; submissionsInRange: number; approvedInRange: number; rejectedInRange: number };
   series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[] };
   recent: Array<{ id: number; type: string; userEmail: string | null; meta: Record<string, unknown>; createdAt: string }>;
@@ -71,8 +74,10 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
   const latest = new Map<string, (typeof subs)[number]>();
   for (const r of subs) if (!latest.has(r.userId)) latest.set(r.userId, r);
   const byStatus = (st: string[]) => [...latest.values()].filter((r) => st.includes(r.status)).length;
-  const active = byStatus(["active"]);
-  const trialing = byStatus(["trialing"]);
+  const nowForLive = Date.now();
+  const liveRow = (r: (typeof subs)[number]) => (r.kind === "pass" || r.kind === "trial" ? !!r.currentPeriodEnd && r.currentPeriodEnd.getTime() > nowForLive : true);
+  const active = [...latest.values()].filter((r) => r.status === "active" && liveRow(r)).length;
+  const trialing = [...latest.values()].filter((r) => r.status === "trialing" && liveRow(r)).length;
   const pastDue = byStatus(["past_due"]);
   const canceled = byStatus(["canceled", "unpaid", "incomplete_expired"]);
   const cancelingAtPeriodEnd = [...latest.values()].filter((r) => r.cancelAtPeriodEnd && ["active", "trialing"].includes(r.status)).length;
@@ -106,6 +111,18 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
   const shares = await eventCount("trip_shared");
   const logins = await eventCount("login", since);
 
+  // Passes & trials
+  const subRows = await db.select().from(schema.subscriptions);
+  const passRows = subRows.filter((r) => r.kind === "pass");
+  const passes = {
+    sold: passRows.length,
+    soldInRange: passRows.filter((r) => r.createdAt >= since).length,
+    revenueCents: passRows.reduce((t, r) => t + r.amountCents, 0),
+    revenueInRangeCents: passRows.filter((r) => r.createdAt >= since).reduce((t, r) => t + r.amountCents, 0),
+    trialsActive: subRows.filter((r) => r.kind === "trial" && r.currentPeriodEnd && r.currentPeriodEnd.getTime() > Date.now()).length,
+    model: s.pricing.model,
+  };
+
   // Businesses
   const bizRows = await db.select({ id: schema.businesses.id, claimStatus: schema.businesses.claimStatus, claimedAt: schema.businesses.claimedAt, sponsorUntil: schema.businesses.sponsorUntil }).from(schema.businesses);
   const planRows = await db.select().from(schema.businessPlans);
@@ -132,7 +149,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
     .select({ id: schema.events.id, type: schema.events.type, meta: schema.events.meta, createdAt: schema.events.createdAt, userEmail: schema.users.email })
     .from(schema.events)
     .leftJoin(schema.users, eq(schema.events.userId, schema.users.id))
-    .where(inArray(schema.events.type, ["signup", "subscription_started", "subscription_canceled", "subscription_payment_failed", "trip_created", "trip_shared", "invite_sent", "download_click", "pwa_installed", "settings_published", "business_claimed", "sponsor_purchased", "submission_created", "user_banned"]))
+    .where(inArray(schema.events.type, ["signup", "subscription_started", "subscription_canceled", "subscription_payment_failed", "trip_created", "trip_shared", "invite_sent", "download_click", "pwa_installed", "settings_published", "business_claimed", "sponsor_purchased", "submission_created", "user_banned", "pass_purchased", "referral_rewarded", "trial_started"]))
     .orderBy(desc(schema.events.id))
     .limit(20);
 
@@ -143,6 +160,8 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
     subscriptions: { active, trialing, pastDue, canceled, cancelingAtPeriodEnd, mrrCents, priceCents: s.pricing.monthlyPriceCents, currency: s.pricing.currency, churnRatePct, conversionPct },
     acquisition: { landingViews, landingVisitors, storeClicksIos, storeClicksAndroid, pwaInstallClicks, pwaInstalled, visitorToSignupPct, invitesSent, invitesAccepted, referredSignups },
     engagement: { trips, tripsInRange, tripsCompleted, tripsShared, stops, shares, logins },
+    referrals: await referralProgramStats(since),
+    passes,
     businesses,
     series: {
       signups: await series("signup"),

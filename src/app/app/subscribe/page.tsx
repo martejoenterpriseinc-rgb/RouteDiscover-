@@ -21,12 +21,18 @@ export default async function SubscribePage() {
           <Image src="/brand/mark.png" alt="" width={56} height={67} className="h-16 w-auto" />
           <Wordmark className="text-2xl" />
           <h1 className="mt-4 text-xl font-bold">
-            {access.status === "none" ? "Start your subscription" : "Your subscription"}
+            {s.pricing.model === "pass" ? (access.allowed ? "Your pass" : access.reason === "expired" ? "Your pass has ended" : `Get your ${s.pricing.passDays}-day pass`) : access.status === "none" ? "Start your subscription" : "Your subscription"}
           </h1>
           <p className="mt-1 text-sm text-muted">
-            {formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}/month
-            {s.pricing.trialDays > 0 && access.status === "none" ? `, after a ${s.pricing.trialDays}-day free trial` : ""}. Cancel anytime.
+            {s.pricing.model === "pass"
+              ? `${formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)} one time for ${s.pricing.passDays} days. No subscription, nothing renews on its own.`
+              : `${formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}/month${s.pricing.trialEnabled && s.pricing.trialDays > 0 && access.status === "none" ? `, after a ${s.pricing.trialDays}-day free trial` : ""}. Cancel anytime.`}
           </p>
+          {access.creditCents > 0 && (
+            <p className="mt-2 rounded-lg bg-green/10 px-3 py-1 text-sm font-semibold text-green">
+              🎁 {formatPrice(access.creditCents, s.pricing.currency)} referral credit will be applied at checkout
+            </p>
+          )}
         </div>
         <ul className="mt-6 space-y-2 text-sm">
           {s.pricing.features.map((f) => (

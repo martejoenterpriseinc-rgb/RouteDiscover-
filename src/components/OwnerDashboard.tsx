@@ -22,6 +22,9 @@ const EVENT_LABEL: Record<string, string> = {
   sponsor_purchased: "Sponsorship purchased",
   submission_created: "Customer update submitted",
   user_banned: "User banned",
+  pass_purchased: "Pass purchased",
+  referral_rewarded: "Referral bonus issued",
+  trial_started: "Free trial started",
 };
 
 export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
@@ -63,8 +66,12 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Revenue</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Monthly recurring revenue" value={money(s.subscriptions.mrrCents, s.subscriptions.currency)} sub={`${s.subscriptions.active + s.subscriptions.pastDue} paying × ${money(s.subscriptions.priceCents, s.subscriptions.currency)}`} accent />
-          <StatTile label="Active subscribers" value={s.subscriptions.active} sub={`${s.subscriptions.trialing} on free trial · ${s.subscriptions.pastDue} past due`} />
+          {s.passes.model === "pass" ? (
+            <StatTile label="Pass revenue" value={money(s.passes.revenueCents, s.subscriptions.currency)} sub={`${money(s.passes.revenueInRangeCents, s.subscriptions.currency)} in the last ${r} days · ${s.passes.sold} passes sold`} accent />
+          ) : (
+            <StatTile label="Monthly recurring revenue" value={money(s.subscriptions.mrrCents, s.subscriptions.currency)} sub={`${s.subscriptions.active + s.subscriptions.pastDue} paying × ${money(s.subscriptions.priceCents, s.subscriptions.currency)}`} accent />
+          )}
+          <StatTile label={s.passes.model === "pass" ? "Active passes" : "Active subscribers"} value={s.subscriptions.active} sub={`${s.subscriptions.trialing} on free trial · ${s.subscriptions.pastDue} past due`} />
           <StatTile label="Canceled" value={s.subscriptions.canceled} sub={`${s.subscriptions.cancelingAtPeriodEnd} set to cancel at period end`} />
           <StatTile label="Churn (30 days)" value={`${s.subscriptions.churnRatePct}%`} sub={`${s.subscriptions.conversionPct}% of accounts have ever subscribed`} />
         </div>
@@ -91,6 +98,19 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
         <p className="mt-2 text-xs text-muted">
           Store downloads themselves are reported by App Store Connect and Google Play Console; connect those under Integrations → Custom APIs once the native apps ship.
         </p>
+      </section>
+
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Referral program</h2>
+          <Link href="/owner/referrals" className="text-xs font-semibold text-blue hover:underline">Referral details →</Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Referred signups" value={s.referrals.referredSignups} sub={`+${s.referrals.referredSignupsInRange} in ${r}d · ${s.referrals.activeReferrers} people sharing`} />
+          <StatTile label="Referred → paid" value={`${s.referrals.conversionPct}%`} sub={`${s.referrals.referredPaid} paid at least once`} accent />
+          <StatTile label="Qualified referrals" value={s.referrals.qualified} sub={`+${s.referrals.qualifiedInRange} in ${r}d`} />
+          <StatTile label="Credits issued" value={money(s.referrals.creditsIssuedCents, s.subscriptions.currency)} sub={`${money(s.referrals.creditsRedeemedCents, s.subscriptions.currency)} redeemed · ${money(s.referrals.creditsOutstandingCents, s.subscriptions.currency)} outstanding`} />
+        </div>
       </section>
 
       <section>

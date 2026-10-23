@@ -52,7 +52,7 @@ export default function OwnerIntegrationsPage() {
         <div className="text-sm">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Webhook endpoint to add in Stripe</span>
           <code className="block rounded-lg bg-background px-3 py-2 text-xs">{origin}/api/billing/webhook</code>
-          <span className="mt-1 block text-xs text-muted">Events: customer.subscription.created / updated / deleted, checkout.session.completed, invoice.payment_failed</span>
+          <span className="mt-1 block text-xs text-muted">Events: checkout.session.completed, customer.subscription.created / updated / deleted, invoice.paid, invoice.payment_failed</span>
         </div>
       </Section>
 

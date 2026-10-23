@@ -145,8 +145,12 @@ export const subscriptions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** Stripe subscription id, or the checkout session id for a one-time pass, or "trial:<userId>". */
     stripeSubscriptionId: text("stripe_subscription_id").notNull(),
     stripePriceId: text("stripe_price_id"),
+    /** "subscription" renews on its own; "pass" and "trial" expire at currentPeriodEnd. */
+    kind: text("kind").$type<"subscription" | "pass" | "trial">().notNull().default("subscription"),
+    amountCents: integer("amount_cents").notNull().default(0),
     status: text("status").$type<SubscriptionStatus>().notNull(),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
@@ -312,3 +316,43 @@ export type Business = typeof businesses.$inferSelect;
 export type BusinessPlan = typeof businessPlans.$inferSelect;
 export type Submission = typeof submissions.$inferSelect;
 export type Photo = typeof photos.$inferSelect;
+
+/* ------------------------------------------------------------------ */
+/* Referral program                                                    */
+/* ------------------------------------------------------------------ */
+
+export const referrals = pgTable(
+  "referrals",
+  {
+    id: id(),
+    referrerId: text("referrer_id").notNull(),
+    refereeId: text("referee_id").notNull(),
+    /** Paid periods (passes or paid invoices) the referee has completed. */
+    paidPeriods: integer("paid_periods").notNull().default(0),
+    firstPaidAt: timestamp("first_paid_at", { withTimezone: true }),
+    qualifiedAt: timestamp("qualified_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("referrals_referee_idx").on(t.refereeId), index("referrals_referrer_idx").on(t.referrerId)],
+);
+
+export const credits = pgTable(
+  "credits",
+  {
+    id: id(),
+    userId: text("user_id").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    reason: text("reason").$type<"referral_bonus" | "referee_bonus" | "manual">().notNull(),
+    referralId: text("referral_id"),
+    status: text("status").$type<"available" | "pending" | "applied">().notNull().default("available"),
+    /** Checkout session the credit was attached to. */
+    checkoutSessionId: text("checkout_session_id"),
+    note: text("note"),
+    createdAt: createdAt(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
+  },
+  (t) => [index("credits_user_idx").on(t.userId, t.status)],
+);
+
+export type Referral = typeof referrals.$inferSelect;
+export type Credit = typeof credits.$inferSelect;

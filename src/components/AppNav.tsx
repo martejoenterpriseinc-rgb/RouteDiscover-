@@ -60,6 +60,9 @@ export function AppNav({ user }: { user: NavUser }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:ml-2">
+            <Link href="/app/referrals" className="hidden rounded-full border border-green/50 bg-green/10 px-3 py-1 text-xs font-semibold text-green hover:bg-green hover:text-white sm:block">
+              🎁 Refer & earn
+            </Link>
             {user.role === "owner" && (
               <Link href="/owner" className="rounded-full border border-orange/60 bg-cream px-3 py-1 text-xs font-semibold text-orange hover:bg-orange hover:text-white">
                 Owner

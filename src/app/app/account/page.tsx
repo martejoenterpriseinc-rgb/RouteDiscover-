@@ -22,11 +22,13 @@ export default async function AccountPage() {
   const statusLabel =
     access.status === "none"
       ? access.billingConfigured
-        ? "No subscription"
+        ? access.model === "pass" ? "No pass yet" : "No subscription"
         : "Free access (billing not enabled yet)"
-      : access.status === "trialing"
-        ? "Free trial"
-        : access.status.replace("_", " ");
+      : access.kind === "trial"
+        ? `Free trial${access.daysLeft != null ? `, ${access.daysLeft} days left` : ""}`
+        : access.kind === "pass"
+          ? access.allowed ? `Pass active, ${access.daysLeft} days left` : "Pass ended"
+          : access.status.replace("_", " ");
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4">
@@ -44,16 +46,20 @@ export default async function AccountPage() {
               {access.cancelAtPeriodEnd && <Badge tone="paid">Cancels at period end</Badge>}
             </div>
             <p className="text-sm text-muted">
-              {formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}/month
-              {access.currentPeriodEnd ? ` · renews ${new Date(access.currentPeriodEnd).toLocaleDateString()}` : ""}
+              {formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}{s.pricing.model === "pass" ? ` per ${s.pricing.passDays}-day pass` : "/month"}
+              {access.currentPeriodEnd ? ` · ${access.kind === "subscription" ? "renews" : "ends"} ${new Date(access.currentPeriodEnd).toLocaleDateString()}` : ""}
             </p>
+            {access.creditCents > 0 && <p className="text-sm font-semibold text-green">🎁 {formatPrice(access.creditCents, s.pricing.currency)} referral credit ready for your next checkout</p>}
             {access.billingConfigured ? (
               <Link href="/app/subscribe" className="text-sm font-semibold text-blue hover:underline">
-                {access.status === "none" ? "Start your subscription →" : "Manage billing →"}
+                {s.pricing.model === "pass" ? (access.allowed && access.status !== "none" ? "Extend your pass →" : "Get your pass →") : access.status === "none" ? "Start your subscription →" : "Manage billing →"}
               </Link>
             ) : (
               <p className="text-xs text-muted">Billing will appear here once Stripe is connected in the owner console.</p>
             )}
+          </Card>
+          <Card title="Refer friends, earn credit" subtitle={s.referrals.promoText}>
+            <Link href="/app/referrals" className="text-sm font-semibold text-blue hover:underline">Open your referral dashboard →</Link>
           </Card>
           <InvitePanel referralCode={user.referralCode} origin={origin} />
           <Card title="Your businesses" subtitle="Claimed a listing? Edit it, sync it, see traffic and review customer updates.">

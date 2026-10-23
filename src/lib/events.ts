@@ -26,7 +26,11 @@ export type EventType =
   | "stop_added"
   | "submission_created"
   | "submission_moderated"
-  | "user_banned";
+  | "user_banned"
+  | "pass_purchased"
+  | "trial_started"
+  | "referral_payment"
+  | "referral_rewarded";
 
 export async function track(
   type: EventType,

@@ -15,6 +15,13 @@
       "when": 1792756496926,
       "tag": "0001_businesses",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792757909071,
+      "tag": "0002_referrals",
+      "breakpoints": true
     }
   ]
 }

@@ -63,14 +63,15 @@ export default async function LandingPage() {
             <p className="mt-4 text-lg text-muted">{s.app.tagline}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
-                Start your {s.pricing.trialDays > 0 ? `${s.pricing.trialDays}-day free trial` : "trip"}
+                {s.pricing.trialEnabled && s.pricing.trialDays > 0 ? `Start your ${s.pricing.trialDays}-day free trial` : s.pricing.model === "pass" ? `Get a ${s.pricing.passDays}-day pass` : "Get started"}
               </Link>
               <a href="#features" className="rounded-xl border border-border bg-surface px-6 py-3 text-base font-semibold hover:bg-cream">
                 See how it works
               </a>
             </div>
             <p className="mt-3 text-sm text-muted">
-              {price}/month after the trial. Cancel anytime.
+              {s.pricing.model === "pass" ? `${price} one time for ${s.pricing.passDays} days of use. No subscription.` : `${price}/month${s.pricing.trialEnabled && s.pricing.trialDays > 0 ? " after the trial" : ""}. Cancel anytime.`}
+              {s.referrals.enabled && s.referrals.referrerBonusCents > 0 ? ` Share with friends and earn ${formatPrice(s.referrals.referrerBonusCents, s.pricing.currency)} credit per qualifying friend.` : ""}
             </p>
             <div className="mt-6">
               <DownloadButtons appStoreUrl={s.app.appStoreUrl} playStoreUrl={s.app.playStoreUrl} compact />
@@ -116,15 +117,18 @@ export default async function LandingPage() {
             </ul>
           </div>
           <div className="rounded-3xl bg-surface p-8 text-foreground shadow-2xl">
-            <p className="text-sm font-semibold uppercase tracking-wide text-muted">RouteDiscover monthly</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted">{s.pricing.model === "pass" ? `RouteDiscover ${s.pricing.passDays}-day pass` : "RouteDiscover monthly"}</p>
             <p className="mt-2 flex items-baseline gap-1">
               <span className="text-5xl font-extrabold tracking-tight">{price}</span>
-              <span className="text-muted">/ month</span>
+              <span className="text-muted">{s.pricing.model === "pass" ? `/ ${s.pricing.passDays} days` : "/ month"}</span>
             </p>
-            {s.pricing.trialDays > 0 && (
-              <p className="mt-1 text-sm font-semibold text-green">{s.pricing.trialDays}-day free trial, then {price}/month</p>
+            {s.pricing.trialEnabled && s.pricing.trialDays > 0 && (
+              <p className="mt-1 text-sm font-semibold text-green">{s.pricing.trialDays}-day free trial first</p>
             )}
-            <p className="mt-1 text-sm text-muted">Billed monthly. Cancel anytime from your account.</p>
+            <p className="mt-1 text-sm text-muted">{s.pricing.model === "pass" ? "One-time payment. Buy another pass whenever you hit the road again." : "Billed monthly. Cancel anytime from your account."}</p>
+            {s.referrals.enabled && s.referrals.referrerBonusCents > 0 && (
+              <p className="mt-1 text-sm text-muted">🎁 {s.referrals.promoTitle}: {formatPrice(s.referrals.referrerBonusCents, s.pricing.currency)} credit per friend who pays for {s.referrals.qualifyingPayments} {s.pricing.model === "pass" ? "passes" : "months"}.</p>
+            )}
             <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
               Create your account
             </Link>

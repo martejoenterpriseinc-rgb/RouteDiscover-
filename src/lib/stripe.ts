@@ -3,8 +3,10 @@ import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import { getDb, schema } from "@/db";
 import type { SubscriptionStatus, User } from "@/db/schema";
+import { grantPass } from "./billing";
 import { grantPlan, setBasicPlanStatus } from "./business";
 import { track } from "./events";
+import { attachCreditsToSession, finalizeCredits, recordPaidPeriod, reserveCredits } from "./referrals";
 import { getLiveSettings, patchLiveAndDraft, type AppSettings } from "./settings";
 
 export async function getStripe(settings?: AppSettings): Promise<Stripe | null> {
@@ -43,7 +45,7 @@ export async function syncStripePrice(): Promise<{ productId: string; priceId: s
       existing.active &&
       existing.unit_amount === monthlyPriceCents &&
       existing.currency === currency.toLowerCase() &&
-      existing.recurring?.interval === "month" &&
+      (s.pricing.model === "subscription" ? existing.recurring?.interval === "month" : !existing.recurring) &&
       existing.product === productId;
     if (!matches) {
       if (existing?.active) await stripe.prices.update(priceId, { active: false }).catch(() => null);
@@ -55,7 +57,7 @@ export async function syncStripePrice(): Promise<{ productId: string; priceId: s
       product: productId,
       unit_amount: monthlyPriceCents,
       currency: currency.toLowerCase(),
-      recurring: { interval: "month" },
+      ...(s.pricing.model === "subscription" ? { recurring: { interval: "month" } } : {}),
     });
     priceId = price.id;
     created = true;
@@ -129,19 +131,35 @@ export async function createCheckoutSession(user: User, origin: string): Promise
   const stripe = await getStripe(s);
   if (!stripe || !s.pricing.stripePriceId) throw new Error("Billing is not set up yet.");
   const customer = await ensureCustomer(stripe, user);
+  const isPass = s.pricing.model === "pass";
+  // Referral credit becomes a one-off Stripe coupon on this checkout.
+  const placeholder = `pending:${user.id}:${Date.now()}`;
+  const credit = await reserveCredits(user.id, placeholder, Math.max(0, s.pricing.monthlyPriceCents - 50));
+  const discounts: Array<{ coupon: string }> = [];
+  if (credit > 0) {
+    const coupon = await stripe.coupons.create({ amount_off: credit, currency: s.pricing.currency.toLowerCase(), duration: "once", name: "Referral credit", max_redemptions: 1 });
+    discounts.push({ coupon: coupon.id });
+  }
+  const metadata = { kind: isPass ? "pass" : "subscription", userId: user.id, creditCents: String(credit) };
   const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+    mode: isPass ? "payment" : "subscription",
     customer,
     line_items: [{ price: s.pricing.stripePriceId, quantity: 1 }],
-    allow_promotion_codes: true,
-    subscription_data: {
-      metadata: { userId: user.id },
-      ...(s.pricing.trialDays > 0 ? { trial_period_days: s.pricing.trialDays } : {}),
-    },
+    ...(discounts.length ? { discounts } : { allow_promotion_codes: true }),
+    metadata,
+    ...(isPass
+      ? {}
+      : {
+          subscription_data: {
+            metadata,
+            ...(s.pricing.trialEnabled && s.pricing.trialDays > 0 ? { trial_period_days: s.pricing.trialDays } : {}),
+          },
+        }),
     success_url: `${origin}/app/subscribe?checkout=success`,
     cancel_url: `${origin}/app/subscribe?checkout=canceled`,
   });
-  await track("checkout_started", { userId: user.id });
+  if (credit > 0) await attachCreditsToSession(placeholder, session.id);
+  await track("checkout_started", { userId: user.id, meta: { kind: metadata.kind, creditCents: credit } });
   if (!session.url) throw new Error("Stripe did not return a checkout URL.");
   return session.url;
 }
@@ -225,6 +243,15 @@ export async function handleStripeEvent(event: { type: string; data: { object: u
     case "checkout.session.completed": {
       const session = event.data.object as { id: string; subscription?: string | null; customer?: string | null; metadata?: Record<string, string> | null; amount_total?: number | null; currency?: string | null };
       const kind = session.metadata?.kind;
+      if (kind === "pass" && session.metadata?.userId) {
+        const settings = await getLiveSettings();
+        await grantPass(session.metadata.userId, { kind: "pass", days: settings.pricing.passDays, ref: session.id, amountCents: session.amount_total ?? 0, priceId: settings.pricing.stripePriceId });
+        await finalizeCredits(session.id);
+        await track("pass_purchased", { userId: session.metadata.userId, meta: { amountCents: session.amount_total ?? 0, days: settings.pricing.passDays } });
+        await recordPaidPeriod(session.metadata.userId, session.amount_total ?? 0);
+        return "pass granted";
+      }
+      if (kind === "subscription" && session.id) await finalizeCredits(session.id);
       if ((kind === "business_basic" || kind === "business_sponsor") && session.metadata?.businessId && session.metadata.userId) {
         await grantPlan({
           businessId: session.metadata.businessId,
@@ -245,6 +272,17 @@ export async function handleStripeEvent(event: { type: string; data: { object: u
         }
       }
       return "checkout noted";
+    }
+    case "invoice.paid":
+    case "invoice.payment_succeeded": {
+      const inv = event.data.object as { customer?: string | null; amount_paid?: number | null; subscription?: string | null };
+      if (inv.customer && (inv.amount_paid ?? 0) > 0) {
+        const db = await getDb();
+        const user = await db.query.users.findFirst({ where: eq(schema.users.stripeCustomerId, inv.customer) });
+        if (user) await recordPaidPeriod(user.id, inv.amount_paid ?? 0);
+        return "paid period recorded";
+      }
+      return "invoice ignored";
     }
     case "invoice.payment_failed": {
       const inv = event.data.object as { customer?: string | null };

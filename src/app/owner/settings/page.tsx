@@ -12,6 +12,9 @@ export default function OwnerSettingsPage() {
   const [price, setPrice] = useState("4.99");
   const [features, setFeatures] = useState("");
   const [biz, setBiz] = useState<AppSettings["business"] | null>(null);
+  const [ref, setRef] = useState<AppSettings["referrals"] | null>(null);
+  const [refBonus, setRefBonus] = useState("1.00");
+  const [refereeBonus, setRefereeBonus] = useState("0.00");
   const [basicPrice, setBasicPrice] = useState("19.99");
   const [sponsorPrice, setSponsorPrice] = useState("49.00");
 
@@ -24,11 +27,14 @@ export default function OwnerSettingsPage() {
     setPrice((c.state.draft.pricing.monthlyPriceCents / 100).toFixed(2));
     setFeatures(c.state.draft.pricing.features.join("\n"));
     setBiz(c.state.draft.business);
+    setRef(c.state.draft.referrals);
+    setRefBonus((c.state.draft.referrals.referrerBonusCents / 100).toFixed(2));
+    setRefereeBonus((c.state.draft.referrals.refereeBonusCents / 100).toFixed(2));
     setBasicPrice((c.state.draft.business.basicPriceCents / 100).toFixed(2));
     setSponsorPrice((c.state.draft.business.sponsorPriceCents / 100).toFixed(2));
   }
 
-  if (!app || !pricing || !biz) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
+  if (!app || !pricing || !biz || !ref) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
 
   const save = () =>
     c.save({
@@ -37,7 +43,14 @@ export default function OwnerSettingsPage() {
         ...pricing,
         monthlyPriceCents: Math.max(0, Math.round(Number(price || 0) * 100)),
         trialDays: Math.max(0, Math.min(90, Math.round(Number(pricing.trialDays) || 0))),
+        passDays: Math.max(1, Math.min(365, Math.round(Number(pricing.passDays) || 30))),
         features: features.split("\n").map((f) => f.trim()).filter(Boolean),
+      },
+      referrals: {
+        ...ref,
+        referrerBonusCents: Math.max(0, Math.round(Number(refBonus || 0) * 100)),
+        refereeBonusCents: Math.max(0, Math.round(Number(refereeBonus || 0) * 100)),
+        qualifyingPayments: Math.max(1, Math.min(24, Math.round(Number(ref.qualifyingPayments) || 1))),
       },
       business: {
         ...biz,
@@ -56,17 +69,30 @@ export default function OwnerSettingsPage() {
       </div>
 
       <Section
-        title="Monthly subscription"
-        subtitle="Billed through Stripe as a recurring monthly price. Changing the amount creates a new Stripe price when you go live; existing subscribers keep their current price."
+        title="Traveler pricing"
+        subtitle="A one-time pass (nothing renews) or a monthly subscription. Changing the amount or model creates a new Stripe price when you go live."
         aside={pricing.stripePriceId ? <Badge tone="free">Synced to Stripe: {pricing.stripePriceId}</Badge> : <Badge>Not yet in Stripe</Badge>}
       >
         <label className="text-sm">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Price per month</span>
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Pricing model</span>
+          <select className={field} value={pricing.model} onChange={(e) => setPricing({ ...pricing, model: e.target.value as "pass" | "subscription" })}>
+            <option value="pass">One-time pass (pay once for a number of days)</option>
+            <option value="subscription">Monthly subscription (renews)</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">{pricing.model === "pass" ? "Price per pass" : "Price per month"}</span>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold">{pricing.currency === "usd" ? "$" : pricing.currency.toUpperCase()}</span>
             <input className={field} type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
         </label>
+        {pricing.model === "pass" && (
+          <label className="text-sm">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Days per pass</span>
+            <input className={field} type="number" min="1" max="365" value={pricing.passDays} onChange={(e) => setPricing({ ...pricing, passDays: Number(e.target.value) })} />
+          </label>
+        )}
         <label className="text-sm">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Currency</span>
           <select className={field} value={pricing.currency} onChange={(e) => setPricing({ ...pricing, currency: e.target.value })}>
@@ -75,19 +101,50 @@ export default function OwnerSettingsPage() {
             ))}
           </select>
         </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Free trial (days)</span>
-          <input className={field} type="number" min="0" max="90" value={pricing.trialDays} onChange={(e) => setPricing({ ...pricing, trialDays: Number(e.target.value) })} />
-          <span className="mt-1 block text-xs text-muted">0 means no trial: the card is charged at signup.</span>
-        </label>
+        <div className="rounded-xl border border-border bg-background p-3 sm:col-span-2">
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" className="h-4 w-4" checked={pricing.trialEnabled} onChange={(e) => setPricing({ ...pricing, trialEnabled: e.target.checked })} />
+            Free trial period {pricing.trialEnabled ? "on" : "off"}
+          </label>
+          <div className="mt-2 flex items-center gap-2 text-sm">
+            <span className="text-muted">Length</span>
+            <input className={`${field} w-24`} type="number" min="0" max="90" disabled={!pricing.trialEnabled} value={pricing.trialDays} onChange={(e) => setPricing({ ...pricing, trialDays: Number(e.target.value) })} />
+            <span className="text-muted">days. {pricing.model === "pass" ? "New accounts get this many free days before they need a pass." : "Applied at the first checkout."}</span>
+          </div>
+        </div>
         <label className="flex items-center gap-2 self-end text-sm">
           <input type="checkbox" className="h-4 w-4" checked={pricing.requireSubscription} onChange={(e) => setPricing({ ...pricing, requireSubscription: e.target.checked })} />
-          Require an active subscription to use the app
+          Require a pass / subscription to use the app
         </label>
         <label className="text-sm sm:col-span-2">
           <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">What&apos;s included (one per line, shown on the landing page and checkout)</span>
           <textarea className={field} rows={5} value={features} onChange={(e) => setFeatures(e.target.value)} />
         </label>
+      </Section>
+
+      <Section
+        title="Referral program"
+        subtitle="Paid users share their link. When a friend joins and pays for the qualifying number of periods, both sides can receive credit that applies at their next checkout. Edit these any time to run a promotion."
+        aside={<label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" className="h-4 w-4" checked={ref.enabled} onChange={(e) => setRef({ ...ref, enabled: e.target.checked })} />Program {ref.enabled ? "on" : "off"}</label>}
+      >
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Referrer bonus (credit)</span>
+          <div className="flex items-center gap-2"><span className="text-lg font-bold">$</span><input className={field} type="number" min="0" step="0.01" value={refBonus} onChange={(e) => setRefBonus(e.target.value)} /></div>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">New customer bonus (credit, 0 for none)</span>
+          <div className="flex items-center gap-2"><span className="text-lg font-bold">$</span><input className={field} type="number" min="0" step="0.01" value={refereeBonus} onChange={(e) => setRefereeBonus(e.target.value)} /></div>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Friend must pay for this many {pricing.model === "pass" ? "passes" : "months"}</span>
+          <input className={field} type="number" min="1" max="24" value={ref.qualifyingPayments} onChange={(e) => setRef({ ...ref, qualifyingPayments: Number(e.target.value) })} />
+        </label>
+        <label className="flex items-center gap-2 self-end text-sm">
+          <input type="checkbox" className="h-4 w-4" checked={ref.referrerMustBePaid} onChange={(e) => setRef({ ...ref, referrerMustBePaid: e.target.checked })} />
+          Only paid users can share a referral link
+        </label>
+        <Field label="Promotion title" value={ref.promoTitle} onChange={(v) => setRef({ ...ref, promoTitle: v })} />
+        <Field label="Promotion text (shown to users)" value={ref.promoText} onChange={(v) => setRef({ ...ref, promoText: v })} wide />
       </Section>
 
       <Section
