@@ -84,6 +84,8 @@ function demoPlaces(search: PlaceSearch): Place[] {
     lat: p.lat,
     lng: p.lng,
     address: p.address,
+      openingHours: p.openingHours,
+      tags: p.tags,
     website: p.website,
   })).filter((p) => search.categories.includes(p.category));
 }

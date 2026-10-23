@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LatLng } from "@/lib/types";
 
 export function useGeolocation() {
@@ -36,5 +36,31 @@ export function useGeolocation() {
     [],
   );
 
-  return { position, error, loading, locate };
+  // Follow mode: keep the position fresh as the device moves.
+  const [following, setFollowingState] = useState(false);
+  const watchId = useRef<number | null>(null);
+  const setFollowing = useCallback((on: boolean) => {
+    if (on && (typeof navigator === "undefined" || !navigator.geolocation)) {
+      setError("Location is not available in this browser.");
+      return;
+    }
+    setFollowingState(on);
+  }, []);
+  useEffect(() => {
+    if (!following || typeof navigator === "undefined" || !navigator.geolocation) return;
+    watchId.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setError(null);
+      },
+      (err) => setError(err.message || "Could not follow your location."),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 },
+    );
+    return () => {
+      if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    };
+  }, [following]);
+
+  return { position, error, loading, locate, following, setFollowing };
 }

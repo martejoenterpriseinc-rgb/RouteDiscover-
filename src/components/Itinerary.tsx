@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlaceCard } from "./Cards";
 import { Disclosure } from "./Disclosure";
 import { Button, Empty } from "./ui";
@@ -29,6 +29,20 @@ export function Itinerary({
   onRemove: (id: string) => void;
 }) {
   const days = useMemo(() => tripDays(trip.startDate, trip.endDate), [trip.startDate, trip.endDate]);
+  // Open/closed at each planned time, worked out on the server in the place's own time zone.
+  const [hours, setHours] = useState<Record<string, { openNow: boolean | null; label: string }>>({});
+  const hoursKey = trip.stops.filter((s) => s.day && s.openingHours).map((s) => `${s.id}@${s.day}T${s.time ?? ""}`).join("|");
+  useEffect(() => {
+    if (!hoursKey) return;
+    const items = trip.stops.filter((s) => s.day && s.openingHours).map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, openingHours: s.openingHours, at: `${s.day}T${s.time ?? "12:00"}` }));
+    let cancelled = false;
+    fetch("/api/hours", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items }) })
+      .then((r) => r.json())
+      .then((j: { hours?: Record<string, { openNow: boolean | null; label: string }> }) => { if (!cancelled && j.hours) setHours(j.hours); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoursKey]);
   const visible = stopsFor(trip, view);
   const counts = useMemo(() => {
     const c: Record<string, number> = { route: 0 };
@@ -89,6 +103,11 @@ export function Itinerary({
                     <>
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-navy text-xs font-bold text-white" aria-label={`Stop ${i + 1}`}>{i + 1}</span>
                       {s.time && <span className="text-xs font-semibold text-muted">{fmtTime(s.time)}</span>}
+                      {hours[s.id] && hours[s.id].openNow !== null && (
+                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${hours[s.id].openNow ? "border-green/40 bg-green/10 text-green" : "border-coral/40 bg-coral/10 text-coral"}`}>
+                          {hours[s.id].openNow ? "Open then" : `Closed then · ${hours[s.id].label.replace(/^Closed · /, "")}`}
+                        </span>
+                      )}
                       <input type="time" aria-label="Time" className="rounded border border-border bg-surface px-1.5 py-0.5 text-xs" value={s.time ?? ""} disabled={busy} onChange={(e) => patch(s.id, { time: e.target.value || null })} />
                     </>
                   )}

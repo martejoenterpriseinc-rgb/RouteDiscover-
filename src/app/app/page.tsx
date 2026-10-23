@@ -17,6 +17,7 @@ import { TripPlanner } from "@/components/TripPlanner";
 import { Button, CategoryChips, Empty, ErrorNote, SourceBanner } from "@/components/ui";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSearch } from "@/hooks/useSearch";
+import { useTrailOverlay } from "@/hooks/useTrailOverlay";
 import { useTrip } from "@/hooks/useTrip";
 import { DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
 import { fetchPlaces } from "@/lib/client";
@@ -93,6 +94,7 @@ function RoutePageInner() {
     return search.data.filter((p) => (p.alongMiles ?? 0) >= myMile - 1);
   }, [search.data, aheadOnly, myMile]);
 
+  const trailLines = useTrailOverlay(visible.find((p) => p.id === selected));
   const markers = useMemo(() => visible.map(placeMarker), [visible]);
 
   const controls = (
@@ -172,6 +174,7 @@ function RoutePageInner() {
       list={list}
       map={
         <Map
+          overlays={trailLines}
           route={route?.geometry}
           markers={markers}
           selectedId={selected}

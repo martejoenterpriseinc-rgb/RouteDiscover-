@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApiEnvelope, CategoryId, Charger, GeoResult, Hotel, LatLng, Place, RouteResult } from "./types";
+import type { ApiEnvelope, CategoryId, Charger, GeoResult, Hotel, LatLng, Place, RouteResult, Happening } from "./types";
 
 export type Area = { route: LatLng[]; radiusMiles: number } | { center: LatLng; radiusMiles: number };
 
@@ -27,6 +27,9 @@ export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | 
 
 export const fetchPlaces = (area: Area, categories: CategoryId[]) =>
   post<Place[]>("/api/places", { ...area, categories });
+
+export type EventQuery = { from?: string; to?: string; kinds?: string[] };
+export const fetchHappenings = (area: Area, q: EventQuery = {}) => post<Happening[]>("/api/happenings", { ...area, ...q });
 
 export type ChargerQuery = { networks?: string[]; connectors?: string[]; minKw?: number; cost?: "any" | "free" | "paid"; superchargersOnly?: boolean };
 export const fetchChargers = (area: Area, q: ChargerQuery = {}) => post<Charger[]>("/api/chargers", { ...area, ...q });

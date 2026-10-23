@@ -16,9 +16,11 @@ export const metadata: Metadata = { title: "Home" };
 
 const ACTIONS = [
   { href: "/app", icon: "🛣️", title: "Plan a route", text: "Pick miles off the highway and see what's worth the stop." },
+  { href: "/app/around", icon: "📡", title: "Suggest around me", text: "What's near you right now, in your categories. Follows you as you travel." },
   { href: "/app/destination", icon: "📍", title: "Explore a destination", text: "Everything around where you're headed." },
   { href: "/app/charging", icon: "⚡", title: "EV charging stops", text: "Every network, filtered by plug, speed and price." },
   { href: "/app/hotels", icon: "🏨", title: "Stays with charging", text: "Hotels and campgrounds where you can plug in." },
+  { href: "/app/events", icon: "🎟️", title: "Events & happenings", text: "Fairs, concerts, car shows, swap meets, yard sales, haunted houses, holiday lights." },
   { href: "/app/trips", icon: "🗓️", title: "My trips", text: "Calendar, history and saved stops." },
   { href: "/app/referrals", icon: "🎁", title: "Refer & earn", text: "Share your link, earn credit." },
 ];

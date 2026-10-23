@@ -23,6 +23,32 @@ test("categorize maps OSM tags to app categories", () => {
   assert.equal(categorize({ shop: "convenience", name: "Gettysburg Souvenirs" }), "souvenirs", "name wins over a generic shop tag");
   assert.equal(categorize({ shop: "chocolate" }), "specialty");
   assert.equal(categorize({ shop: "mall" }), "shopping");
+  assert.equal(categorize({ craft: "winery" }), "wine");
+  assert.equal(categorize({ amenity: "marketplace" }), "flea");
+  assert.equal(categorize({ shop: "second_hand", name: "Shipshewana Flea Market" }), "flea");
+  assert.equal(categorize({ leisure: "stadium", name: "Lebanon Area Fairgrounds" }), "fairgrounds");
+  assert.equal(categorize({ tourism: "theme_park" }), "amusement");
+  assert.equal(categorize({ leisure: "water_park" }), "amusement");
+  assert.equal(categorize({ leisure: "track", sport: "karting" }), "gokarts");
+  assert.equal(categorize({ aerialway: "zip_line" }), "gokarts");
+  assert.equal(categorize({ leisure: "miniature_golf" }), "minigolf");
+  assert.equal(categorize({ leisure: "golf_course" }), "golf");
+  assert.equal(categorize({ natural: "cave_entrance" }), "caves");
+  assert.equal(categorize({ tourism: "attraction", name: "Indian Echo Caverns" }), "caves");
+  assert.equal(categorize({ highway: "trailhead" }), "hiking");
+  assert.equal(categorize({ route: "hiking", name: "Appalachian Trail" }), "hiking");
+  assert.equal(categorize({ route: "bicycle", name: "River Trail" }), "biking");
+  assert.equal(categorize({ natural: "hot_spring" }), "hotsprings");
+  assert.equal(categorize({ leisure: "slipway" }), "boating");
+  assert.equal(categorize({ leisure: "marina" }), "boating");
+  assert.equal(categorize({ route: "snowmobile" }), "offroad");
+  assert.equal(categorize({ leisure: "track", sport: "motocross" }), "offroad");
+  assert.equal(categorize({ tourism: "guest_house" }), "bnb");
+  assert.equal(categorize({ tourism: "camp_site", fee: "no" }), "camping_free");
+  assert.equal(categorize({ tourism: "camp_site", operator: "Bureau of Land Management" }), "camping_free");
+  assert.equal(categorize({ tourism: "camp_site", fee: "yes" }), "campgrounds");
+  assert.equal(categorize({ leisure: "spa" }), "spa");
+  assert.equal(categorize({ shop: "massage", name: "Serenity Day Spa" }), "spa");
 });
 
 test("parseCategories drops unknown ids", () => {

@@ -97,6 +97,10 @@ export default function OwnerIntegrationsPage() {
         <Field label="API key" value={i.openChargeMap.apiKey} onChange={(v) => set("openChargeMap", { apiKey: v })} secret hint="https://openchargemap.org/site/develop/api" wide />
       </Section>
 
+      <Section title="Ticketmaster (concerts, sports, fairs & festivals)" subtitle="Free Discovery API key adds ticketed events to the Events screen. Community-submitted events and the seasonal samples work without it." aside={<TestButton target="ticketmaster" />}>
+        <Field label="API key" value={i.ticketmaster.apiKey} onChange={(v) => set("ticketmaster", { apiKey: v })} secret hint="https://developer.ticketmaster.com" wide />
+      </Section>
+
       <Section title="Maps & places" subtitle="Routing, places and geocoding default to free public OpenStreetMap services. Point them at your own servers or a hosted provider for production traffic.">
         <div className="flex items-end justify-between gap-2 sm:col-span-2">
           <Field label="Routing (OSRM) URL" value={i.routing.osrmUrl} onChange={(v) => set("routing", { osrmUrl: v })} wide />

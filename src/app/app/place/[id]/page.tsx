@@ -1,5 +1,6 @@
 "use client";
 
+import { hoursStatus } from "@/lib/hours";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -51,7 +52,7 @@ export default function PlacePage() {
   if (!view) return <p className="p-4 text-sm text-muted">Loading…</p>;
   const b = view.business;
   const cat = CATEGORY_BY_ID[b.category];
-  const place = { id: b.placeId, name: b.name, category: b.category, lat: b.lat, lng: b.lng, address: b.address, website: b.website, phone: b.phone, openingHours: b.hours };
+  const place = { id: b.placeId, name: b.name, category: b.category, lat: b.lat, lng: b.lng, address: b.address, website: b.website, phone: b.phone, openingHours: b.hours, hours: hoursStatus({ lat: b.lat, lng: b.lng, openingHours: b.hours ?? undefined }) };
 
   async function send(body: Record<string, unknown>) {
     setBusy(true);

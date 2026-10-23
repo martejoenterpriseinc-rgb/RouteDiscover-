@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  doublePrecision,
   date,
   index,
   integer,
@@ -420,6 +421,36 @@ export const accountRequests = pgTable(
   },
   (t) => [uniqueIndex("account_requests_email_idx").on(t.email), index("account_requests_status_idx").on(t.status)],
 );
+
+export type EventKind = "fair" | "festival" | "concert" | "car_show" | "swap_meet" | "flea_market" | "yard_sale" | "haunted" | "holiday_lights" | "sports" | "market" | "other";
+
+/** Time-bound happenings: fairs, concerts, car shows, swap meets, the big multi-state yard sales, haunted houses, holiday lights… */
+export const happenings = pgTable(
+  "happenings",
+  {
+    id: id(),
+    title: text("title").notNull(),
+    kind: text("kind").$type<EventKind>().notNull().default("other"),
+    description: text("description").notNull().default(""),
+    venue: text("venue").notNull().default(""),
+    address: text("address").notNull().default(""),
+    lat: doublePrecision("lat").notNull(),
+    lng: doublePrecision("lng").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    allDay: boolean("all_day").notNull().default(false),
+    url: text("url").notNull().default(""),
+    price: text("price").notNull().default(""),
+    source: text("source").$type<"community" | "ticketmaster" | "demo">().notNull().default("community"),
+    sourceId: text("source_id"),
+    status: text("status").$type<"pending" | "approved" | "rejected">().notNull().default("pending"),
+    submittedBy: text("submitted_by"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("happenings_time_idx").on(t.status, t.startsAt), uniqueIndex("happenings_source_idx").on(t.source, t.sourceId)],
+);
+export type Happening = typeof happenings.$inferSelect;
 
 export const passwordResets = pgTable(
   "password_resets",

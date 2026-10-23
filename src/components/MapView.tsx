@@ -28,6 +28,8 @@ export type MapViewProps = {
   circle?: { center: LatLng; radiusMiles: number } | null;
   /** Changing this value re-fits the map to its content. */
   fitKey: string;
+  /** Extra lines to draw, e.g. a hiking trail's geometry. */
+  overlays?: LatLng[][];
 };
 
 const TILE_URL =
@@ -173,7 +175,7 @@ function StopOnUnmount() {
   return null;
 }
 
-export default function MapView({ route, markers, selectedId, onSelect, here, circle, fitKey }: MapViewProps) {
+export default function MapView({ route, markers, selectedId, onSelect, here, circle, fitKey, overlays }: MapViewProps) {
   const fitPts = useMemo(() => {
     const pts: LatLng[] = [];
     if (route?.length) pts.push(...route);
@@ -197,6 +199,11 @@ export default function MapView({ route, markers, selectedId, onSelect, here, ci
           <Polyline positions={route.map((p) => [p.lat, p.lng])} pathOptions={{ color: "#ffffff", weight: 8, opacity: 0.9 }} />
           <Polyline positions={route.map((p) => [p.lat, p.lng])} pathOptions={{ color: "#1f8ae6", weight: 5 }} />
         </>
+      )}
+      {(overlays ?? []).map((line, i) =>
+        line.length > 1 ? (
+          <Polyline key={`ov-${i}`} positions={line.map((p) => [p.lat, p.lng])} pathOptions={{ color: "#33691e", weight: 4, dashArray: "6 6", opacity: 0.9 }} />
+        ) : null,
       )}
       {circle && (
         <Circle

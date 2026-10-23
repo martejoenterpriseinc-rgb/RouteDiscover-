@@ -1,6 +1,7 @@
 import { CATEGORY_BY_ID } from "./categories";
+import { EVENT_KIND_BY_ID, fmtEventWhen } from "./event-kinds";
 import { networkById, pricingSummary } from "./ev-networks";
-import type { CategoryId, Charger, Hotel, Place } from "./types";
+import type { CategoryId, Charger, Happening, Hotel, Place } from "./types";
 import type { MapMarker } from "@/components/MapView";
 
 export const CATEGORY_COLORS: Record<CategoryId, string> = {
@@ -24,6 +25,22 @@ export const CATEGORY_COLORS: Record<CategoryId, string> = {
   souvenirs: "#d81b60",
   specialty: "#6d4c41",
   buffets: "#ef6c00",
+  wine: "#7b1fa2",
+  flea: "#8d6e63",
+  fairgrounds: "#c2185b",
+  amusement: "#f50057",
+  gokarts: "#ff3d00",
+  minigolf: "#43a047",
+  golf: "#2e7d32",
+  caves: "#5d4037",
+  hiking: "#33691e",
+  biking: "#0288d1",
+  hotsprings: "#d84315",
+  boating: "#0277bd",
+  offroad: "#795548",
+  bnb: "#6a1b9a",
+  camping_free: "#1b5e20",
+  spa: "#ad1457",
 };
 
 export const placeMarker = (p: Place): MapMarker => ({
@@ -34,6 +51,16 @@ export const placeMarker = (p: Place): MapMarker => ({
   emoji: CATEGORY_BY_ID[p.category].emoji,
   color: CATEGORY_COLORS[p.category],
   sub: p.address,
+});
+
+export const eventMarker = (h: Happening): MapMarker => ({
+  id: h.id,
+  lat: h.lat,
+  lng: h.lng,
+  label: h.title,
+  emoji: EVENT_KIND_BY_ID[h.kind]?.emoji ?? "📅",
+  color: "#c2185b",
+  sub: [fmtEventWhen(h), h.venue].filter(Boolean).join(" · "),
 });
 
 export const chargerMarker = (c: Charger): MapMarker => ({

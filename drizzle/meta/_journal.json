@@ -50,6 +50,13 @@
       "when": 1792768764024,
       "tag": "0006_account_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792777392278,
+      "tag": "0007_happenings",
+      "breakpoints": true
     }
   ]
 }

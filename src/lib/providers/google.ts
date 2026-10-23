@@ -16,16 +16,16 @@ export const GOOGLE_TYPES: Record<CategoryId, string[]> = {
   buffets: ["buffet_restaurant"],
   food: ["restaurant", "meal_takeaway", "bakery", "ice_cream_shop", "sandwich_shop", "pizza_restaurant", "diner"],
   coffee: ["cafe", "coffee_shop"],
-  attractions: ["tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "amusement_park", "visitor_center"],
-  outdoors: ["park", "national_park", "state_park", "hiking_area", "garden"],
+  attractions: ["tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "visitor_center"],
+  outdoors: ["park", "national_park", "state_park", "garden", "beach"],
   historic: ["historical_landmark", "historical_place", "monument"],
   souvenirs: ["gift_shop"],
   specialty: ["candy_store", "chocolate_shop", "cheese_shop", "deli", "wine_store", "liquor_store", "tea_house", "toy_store", "hobby_store", "art_studio", "butcher_shop", "farm"],
   shopping: ["shopping_mall", "department_store", "book_store", "clothing_store", "market"],
   antiques: ["antique_store", "thrift_store"],
   entertainment: ["movie_theater", "performing_arts_theater", "casino", "bowling_alley", "amusement_center"],
-  kids: ["amusement_park", "playground", "water_park", "childrens_camp"],
-  lodging: ["hotel", "motel", "lodging", "resort_hotel", "bed_and_breakfast", "inn"],
+  kids: ["playground", "childrens_camp", "indoor_playground"],
+  lodging: ["hotel", "motel", "lodging", "resort_hotel", "inn"],
   travel: ["truck_stop"],
   fuel: ["gas_station"],
   ev: ["electric_vehicle_charging_station"],
@@ -33,7 +33,37 @@ export const GOOGLE_TYPES: Record<CategoryId, string[]> = {
   restrooms: ["public_bathroom"],
   groceries: ["supermarket", "grocery_store", "pharmacy", "convenience_store"],
   campgrounds: ["campground", "rv_park"],
+  wine: ["winery", "wine_bar", "bar"],
+  flea: ["market"],
+  fairgrounds: ["event_venue"],
+  amusement: ["amusement_park", "water_park"],
+  gokarts: ["adventure_sports_center", "amusement_center"],
+  minigolf: ["miniature_golf_course"],
+  golf: ["golf_course"],
+  caves: ["tourist_attraction"],
+  hiking: ["hiking_area"],
+  biking: ["cycling_park"],
+  hotsprings: ["spa", "tourist_attraction"],
+  boating: ["marina"],
+  offroad: ["off_roading_area"],
+  bnb: ["bed_and_breakfast", "guest_house"],
+  camping_free: ["campground", "rv_park"],
+  spa: ["spa", "massage", "sauna", "wellness_center"],
 };
+
+/**
+ * Place types the Places API (New) accepts in includedTypes. Anything outside this list is
+ * dropped before a request so one unknown type can't fail the whole search.
+ */
+export const KNOWN_GOOGLE_TYPES = new Set([
+  "restaurant", "meal_takeaway", "bakery", "ice_cream_shop", "sandwich_shop", "pizza_restaurant", "diner", "buffet_restaurant", "cafe", "coffee_shop", "bar", "wine_bar", "pub", "tea_house", "deli",
+  "tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "amusement_park", "amusement_center", "visitor_center", "water_park", "adventure_sports_center", "event_venue", "movie_theater", "performing_arts_theater", "casino", "bowling_alley", "playground", "childrens_camp",
+  "park", "national_park", "state_park", "hiking_area", "garden", "beach", "cycling_park", "off_roading_area", "marina", "golf_course", "miniature_golf_course", "campground", "rv_park",
+  "historical_landmark", "historical_place", "monument",
+  "shopping_mall", "department_store", "gift_shop", "book_store", "clothing_store", "market", "antique_store", "thrift_store", "candy_store", "liquor_store", "butcher_shop", "art_studio",
+  "hotel", "motel", "lodging", "resort_hotel", "bed_and_breakfast", "guest_house", "inn", "spa", "massage", "sauna", "wellness_center",
+  "gas_station", "truck_stop", "electric_vehicle_charging_station", "rest_stop", "public_bathroom", "supermarket", "grocery_store", "pharmacy", "convenience_store",
+]);
 
 /** Reverse map: first category whose type list contains the place's primary type. */
 export function categoryForTypes(types: string[]): CategoryId | null {
@@ -63,13 +93,14 @@ type GooglePlace = {
   internationalPhoneNumber?: string;
   googleMapsUri?: string;
   editorialSummary?: { text?: string };
-  regularOpeningHours?: { weekdayDescriptions?: string[] };
+  regularOpeningHours?: { weekdayDescriptions?: string[]; periods?: Array<{ open: { day: number; hour: number; minute: number }; close?: { day: number; hour: number; minute: number } }> };
+  utcOffsetMinutes?: number;
   photos?: Array<{ name: string }>;
   reviews?: Array<{ rating?: number; text?: { text?: string }; relativePublishTimeDescription?: string; publishTime?: string; authorAttribution?: { displayName?: string } }>;
 };
 
-const SEARCH_FIELDS = "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType,places.rating,places.userRatingCount,places.priceLevel,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours.weekdayDescriptions,places.googleMapsUri";
-const DETAIL_FIELDS = "id,displayName,formattedAddress,location,types,primaryType,rating,userRatingCount,priceLevel,websiteUri,nationalPhoneNumber,internationalPhoneNumber,regularOpeningHours.weekdayDescriptions,googleMapsUri,editorialSummary,photos.name,reviews";
+const SEARCH_FIELDS = "places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType,places.rating,places.userRatingCount,places.priceLevel,places.websiteUri,places.nationalPhoneNumber,places.regularOpeningHours.weekdayDescriptions,places.regularOpeningHours.periods,places.utcOffsetMinutes,places.googleMapsUri";
+const DETAIL_FIELDS = "id,displayName,formattedAddress,location,types,primaryType,rating,userRatingCount,priceLevel,websiteUri,nationalPhoneNumber,internationalPhoneNumber,regularOpeningHours.weekdayDescriptions,regularOpeningHours.periods,utcOffsetMinutes,googleMapsUri,editorialSummary,photos.name,reviews";
 
 async function google<T>(url: string, key: string, init: RequestInit & { fieldMask?: string } = {}): Promise<T> {
   const headers: Record<string, string> = { "X-Goog-Api-Key": key, "Content-Type": "application/json" };
@@ -110,6 +141,8 @@ export function toPlace(p: GooglePlace): Place | null {
       mapsUri: p.googleMapsUri,
       photoNames: p.photos?.map((x) => x.name).slice(0, 10),
       reviews: reviews.length ? reviews : undefined,
+      periods: p.regularOpeningHours?.periods,
+      utcOffsetMinutes: p.utcOffsetMinutes,
     },
   };
 }
@@ -172,7 +205,7 @@ export function samplePoints(route: LatLng[], radiusMiles: number, maxPoints: nu
 export async function googlePlaces(cfg: GoogleConfig, search: { kind: "point"; center: LatLng; radiusMiles: number; categories: CategoryId[] } | { kind: "corridor"; route: LatLng[]; radiusMiles: number; categories: CategoryId[] }): Promise<Place[]> {
   if (!cfg.places) throw new Error("Google Places not enabled");
   capFor = cfg.caps;
-  const types = Array.from(new Set(search.categories.flatMap((c) => GOOGLE_TYPES[c])));
+  const types = Array.from(new Set(search.categories.flatMap((c) => GOOGLE_TYPES[c]))).filter((t) => KNOWN_GOOGLE_TYPES.has(t));
   const seen = new Map<string, Place>();
   const add = (list: Place[]) => {
     for (const p of list) if (!seen.has(p.id) && search.categories.includes(p.category)) seen.set(p.id, p);

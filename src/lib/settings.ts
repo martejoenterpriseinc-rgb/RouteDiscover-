@@ -106,6 +106,8 @@ export type AppSettings = {
       caps: { places: number; routes: number; geocoding: number; photos: number };
     };
     openChargeMap: { apiKey: string };
+    /** Ticketmaster Discovery API: concerts, sports, fairs and festivals with tickets. */
+    ticketmaster: { apiKey: string };
     routing: { osrmUrl: string };
     places: { overpassUrl: string };
     geocoding: { nominatimUrl: string };
@@ -123,6 +125,7 @@ export const SECRET_PATHS = [
   "integrations.stripe.webhookSecret",
   "integrations.google.serverKey",
   "integrations.openChargeMap.apiKey",
+  "integrations.ticketmaster.apiKey",
   "integrations.email.apiKey",
   "integrations.sms.authToken",
 ] as const;
@@ -232,6 +235,7 @@ Privacy questions: see the support address on our website.`,
     stripe: { secretKey: "", publishableKey: "", webhookSecret: "" },
     google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12, caps: { places: 4500, routes: 9000, geocoding: 9000, photos: 9000 } },
     openChargeMap: { apiKey: "" },
+    ticketmaster: { apiKey: "" },
     routing: { osrmUrl: "https://router.project-osrm.org" },
     places: { overpassUrl: "https://overpass-api.de/api/interpreter" },
     geocoding: { nominatimUrl: "https://nominatim.openstreetmap.org" },
@@ -309,6 +313,7 @@ function withEnvFallback(s: AppSettings): AppSettings {
         serverKey: i.google.serverKey || env.GOOGLE_MAPS_API_KEY || "",
       },
       openChargeMap: { apiKey: i.openChargeMap.apiKey || env.OPENCHARGEMAP_API_KEY || "" },
+      ticketmaster: { apiKey: i.ticketmaster?.apiKey || env.TICKETMASTER_API_KEY || "" },
       routing: { osrmUrl: i.routing.osrmUrl || env.OSRM_URL || DEFAULT_SETTINGS.integrations.routing.osrmUrl },
       places: { overpassUrl: i.places.overpassUrl || env.OVERPASS_URL || DEFAULT_SETTINGS.integrations.places.overpassUrl },
       geocoding: {

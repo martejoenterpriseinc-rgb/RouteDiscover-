@@ -14,11 +14,13 @@ import { ALL_NETWORKS } from "@/lib/ev-networks";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
-  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and see attractions, food, outdoors, history, antiques and more, sorted by mile marker." },
+  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and pick from 40 categories: food and buffets, wineries, attractions, caves, hiking and bike trails, boat launches, hot springs, go-karts and zip lines, golf and mini golf, flea markets, antique malls, travel centers, free and paid camping, spas and B&Bs, and more, sorted by mile marker." },
   { icon: "📍", title: "Destination lookup", text: "Arrive knowing what's around you. Search any radius around your destination by category." },
   { icon: "⚡", title: "EV charging stops on every network", text: "Tesla, Electrify America, EVgo, ChargePoint, Rivian, IONNA and dozens more, filtered by plug, speed and price, with the published rate and fees on each stop and what's walkable while you charge." },
   { icon: "🏨", title: "Hotels and campgrounds with chargers", text: "Sleep where you can plug in. Free vs paid charging, Tesla Destination and Level 2 chargers, RV hookups and guest-only access, all flagged." },
-  { icon: "🗓️", title: "Plan it on a calendar", text: "Save trips with dates, build your stop list, and look back on your travel history." },
+  { icon: "🎟️", title: "Events along the way", text: "Fairs, festivals, concerts, car shows, swap meets, flea markets, the big multi-state yard sales, haunted houses and holiday lights, with dates and local times." },
+  { icon: "📡", title: "Around me, as you go", text: "Suggestions near you right now from the categories you chose, open-now status in the local time zone, and a follow mode that keeps up as you travel." },
+  { icon: "🗓️", title: "Plan it on a calendar", text: "Save trips with dates, build a day-by-day itinerary with a time for each stop, and look back on your travel history." },
   { icon: "🔗", title: "Share and invite", text: "Send a trip link, invite friends, and post your route to social media." },
 ];
 

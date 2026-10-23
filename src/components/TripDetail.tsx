@@ -4,6 +4,7 @@ import { Disclosure } from "./Disclosure";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Itinerary } from "./Itinerary";
+import { TripSuggestions } from "./TripSuggestions";
 import { stopsFor, type ItineraryView } from "@/lib/itinerary";
 import { SendToPhone } from "./SendToPhone";
 import { ShareButtons } from "./ShareButtons";
@@ -183,6 +184,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
           {inviteMsg && <p className="mt-1 text-xs text-muted">{inviteMsg}</p>}
         </Disclosure>
 
+        {!past && <TripSuggestions trip={trip} onAdded={setTrip} />}
         <Itinerary
           trip={trip}
           view={view}

@@ -10,6 +10,7 @@ import { SplitLayout } from "@/components/SplitLayout";
 import { Button, CategoryChips, Empty, ErrorNote, RadiusSlider, SourceBanner } from "@/components/ui";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSearch } from "@/hooks/useSearch";
+import { useTrailOverlay } from "@/hooks/useTrailOverlay";
 import { useTrip } from "@/hooks/useTrip";
 import { DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
 import { fetchPlaces } from "@/lib/client";
@@ -39,6 +40,7 @@ export default function DestinationPage() {
     setSearchKey(`${where.lat},${where.lng}|${radius}|${categories.join(",")}`);
   }
 
+  const trailLines = useTrailOverlay(search.data.find((p) => p.id === selected));
   const markers = useMemo(() => search.data.map(placeMarker), [search.data]);
 
   return (
@@ -92,6 +94,7 @@ export default function DestinationPage() {
       }
       map={
         <Map
+          overlays={trailLines}
           markers={markers}
           selectedId={selected}
           onSelect={setSelected}

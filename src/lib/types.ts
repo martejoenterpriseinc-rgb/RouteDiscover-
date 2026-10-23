@@ -1,3 +1,5 @@
+export type HoursStatus = { openNow: boolean | null; label: string; timezone?: string };
+
 import type { ChargerPricing, ConnectorType, SpeedTier } from "./ev-networks";
 export type LatLng = { lat: number; lng: number };
 
@@ -23,12 +25,33 @@ export type CategoryId =
   | "travel"
   | "souvenirs"
   | "specialty"
-  | "buffets";
+  | "buffets"
+  | "wine"
+  | "flea"
+  | "fairgrounds"
+  | "amusement"
+  | "gokarts"
+  | "minigolf"
+  | "golf"
+  | "caves"
+  | "hiking"
+  | "biking"
+  | "hotsprings"
+  | "boating"
+  | "offroad"
+  | "bnb"
+  | "camping_free"
+  | "spa";
+
+export type CategoryGroupId = "food" | "shopping" | "fun" | "outdoors" | "stay" | "roadside";
 
 export type Category = {
   id: CategoryId;
   label: string;
   emoji: string;
+  group: CategoryGroupId;
+  /** Short help shown in the picker. */
+  hint?: string;
   /** Overpass tag selectors (each is appended to a `nwr` query). */
   osm: string[];
   /** Shown by default in "while charging" mode (walkable things). */
@@ -67,6 +90,8 @@ export type Place = {
   website?: string;
   phone?: string;
   openingHours?: string;
+  /** Open/closed right now, worked out in the place's own time zone when hours are known. */
+  hours?: HoursStatus;
   tags?: Record<string, string>;
   /** Provider that produced this record. */
   provider?: "google" | "osm" | "ocm" | "demo";
@@ -79,6 +104,9 @@ export type Place = {
     mapsUri?: string;
     photoNames?: string[];
     reviews?: Array<{ author: string; rating: number; text: string; time: string }>;
+    /** Google's structured hours (day 0 = Sunday) and the place's UTC offset. */
+    periods?: Array<{ open: { day: number; hour: number; minute: number }; close?: { day: number; hour: number; minute: number } }>;
+    utcOffsetMinutes?: number;
   };
   /* Listing layer (claimed businesses, sponsorship, community ratings) */
   listingId?: string;
@@ -150,4 +178,29 @@ export type ApiEnvelope<T> = {
   source: DataSource;
   notice?: string;
   data: T;
+};
+
+export type EventKind = "fair" | "festival" | "concert" | "car_show" | "swap_meet" | "flea_market" | "yard_sale" | "haunted" | "holiday_lights" | "sports" | "market" | "other";
+
+export type Happening = {
+  id: string;
+  title: string;
+  kind: EventKind;
+  description?: string;
+  venue?: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  /** ISO instants. */
+  startsAt: string;
+  endsAt: string;
+  allDay: boolean;
+  url?: string;
+  price?: string;
+  source: "community" | "ticketmaster" | "demo";
+  /** Time zone of the venue, for showing local times. */
+  timezone?: string;
+  detourMiles?: number;
+  alongMiles?: number;
+  distanceMiles?: number;
 };
