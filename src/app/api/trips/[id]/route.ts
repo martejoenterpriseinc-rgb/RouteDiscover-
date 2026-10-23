@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { track } from "@/lib/events";
 import { body, fail, handle, json, str } from "@/lib/http";
 import { DATE_RE, deleteTrip, getTrip, updateTrip } from "@/lib/trips";
+import { invalidatePublicStats } from "@/lib/public-stats";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -58,8 +59,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
         .filter((s): s is NonNullable<typeof s> => !!s);
     }
     const trip = await updateTrip(user.id, id, patch);
-    if (patch.status === "completed" && existing.status !== "completed") {
-      await track("trip_completed", { userId: user.id, meta: { tripId: id } });
+    if (patch.status && patch.status !== existing.status) {
+      invalidatePublicStats();
+      if (patch.status === "completed") await track("trip_completed", { userId: user.id, meta: { tripId: id } });
     }
     return json({ trip });
   } catch (err) {

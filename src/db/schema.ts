@@ -364,3 +364,19 @@ export const credits = pgTable(
 
 export type Referral = typeof referrals.$inferSelect;
 export type Credit = typeof credits.$inferSelect;
+
+/** Every place the app has surfaced in a search, by provider. Powers the "locations" KPI. */
+export const placesSeen = pgTable(
+  "places_seen",
+  {
+    placeId: text("place_id").primaryKey(),
+    name: text("name").notNull(),
+    provider: text("provider").$type<"google" | "osm" | "ocm" | "demo" | "unknown">().notNull(),
+    category: text("category").notNull(),
+    lat: real("lat").notNull(),
+    lng: real("lng").notNull(),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("places_seen_provider_idx").on(t.provider)],
+);
