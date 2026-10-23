@@ -68,13 +68,14 @@ function Card({
   );
 }
 
-function ListingBadges({ item }: { item: { sponsored?: boolean; claimed?: boolean; rating?: number; reviewCount?: number } }) {
-  if (!item.sponsored && !item.claimed && !item.rating) return null;
+function ListingBadges({ item }: { item: { sponsored?: boolean; claimed?: boolean; rating?: number; reviewCount?: number; google?: { rating?: number; ratingCount?: number } } }) {
+  const g = item.google;
+  if (!item.sponsored && !item.claimed && !item.rating && !g?.rating) return null;
   return (
     <div className="mt-1 flex flex-wrap gap-1">
       {item.sponsored && <Badge tone="paid">★ Sponsored</Badge>}
       {item.claimed && <Badge tone="blue">✓ Verified by owner</Badge>}
-      {item.rating ? <Badge tone="free">★ {item.rating.toFixed(1)} ({item.reviewCount})</Badge> : null}
+      {item.rating ? <Badge tone="free">★ {item.rating.toFixed(1)} ({item.reviewCount})</Badge> : g?.rating ? <Badge>★ {g.rating.toFixed(1)} Google{g.ratingCount ? ` (${g.ratingCount.toLocaleString()})` : ""}</Badge> : null}
     </div>
   );
 }

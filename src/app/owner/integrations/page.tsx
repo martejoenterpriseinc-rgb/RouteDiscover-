@@ -56,6 +56,28 @@ export default function OwnerIntegrationsPage() {
         </div>
       </Section>
 
+      <Section
+        title="Google Maps Platform"
+        subtitle="Google Maps for the map itself, and Google Places as the baseline listing information (address, hours, phone, website, rating, reviews, photos) until a business or traveler updates it. Routes and Geocoding too. Without a key, OpenStreetMap is used."
+        aside={<div className="flex items-center gap-2">{env.google && !i.google.serverKey && <Badge tone="blue">Using server env key</Badge>}<TestButton target="google" /></div>}
+      >
+        <Field label="Browser key (Maps JavaScript API)" value={i.google.browserKey} onChange={(v) => set("google", { browserKey: v })} placeholder="AIza…" hint="Visible to visitors: restrict it to your website in Google Cloud. Enable “Maps JavaScript API”." />
+        <Field label="Server key (Places, Routes, Geocoding)" value={i.google.serverKey} onChange={(v) => set("google", { serverKey: v })} secret placeholder="AIza…" hint="Kept secret: restrict by IP. Enable “Places API (New)”, “Routes API”, “Geocoding API”. Leave blank to reuse the browser key." />
+        <div className="grid grid-cols-2 gap-2 text-sm sm:col-span-2">
+          {(["mapEnabled", "placesEnabled", "routingEnabled", "geocodingEnabled"] as const).map((k) => (
+            <label key={k} className="flex items-center gap-2">
+              <input type="checkbox" className="h-4 w-4" checked={i.google[k]} onChange={(e) => set("google", { [k]: e.target.checked })} />
+              {k === "mapEnabled" ? "Use Google for the map" : k === "placesEnabled" ? "Use Google Places for search & listings" : k === "routingEnabled" ? "Use Google Routes for driving routes" : "Use Google Geocoding for address lookup"}
+            </label>
+          ))}
+        </div>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Max Places requests per route search</span>
+          <input className={field} type="number" min="1" max="60" value={i.google.maxRequestsPerSearch} onChange={(e) => set("google", { maxRequestsPerSearch: Number(e.target.value) })} />
+          <span className="mt-1 block text-xs text-muted">Long routes are sampled at this many points (Nearby Search is billed per request). 12 covers a 700-mile drive at roughly 60-mile spacing.</span>
+        </label>
+      </Section>
+
       <Section title="Open Charge Map (EV chargers)" subtitle="Tesla Superchargers and hotel chargers. Free key raises rate limits." aside={<TestButton target="openChargeMap" />}>
         <Field label="API key" value={i.openChargeMap.apiKey} onChange={(v) => set("openChargeMap", { apiKey: v })} secret hint="https://openchargemap.org/site/develop/api" wide />
       </Section>

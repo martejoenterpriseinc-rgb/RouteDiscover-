@@ -122,13 +122,28 @@ export default function PlacePage() {
             )}
           </dl>
           {b.description && <p className="mt-3 whitespace-pre-wrap text-sm">{b.description}</p>}
+          {!b.description && b.google?.summary && <p className="mt-3 text-sm">{b.google.summary}</p>}
+          {b.google && (b.google.rating || b.google.priceLevel) && (
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              {b.google.rating ? (
+                <span className="inline-flex items-center gap-1">
+                  <Stars value={Math.round(b.google.rating)} /> {b.google.rating.toFixed(1)}
+                  {b.google.ratingCount ? <span className="text-muted">({b.google.ratingCount.toLocaleString()} on Google)</span> : null}
+                </span>
+              ) : null}
+              {b.google.priceLevel && <Badge>{b.google.priceLevel.replace("PRICE_LEVEL_", "").toLowerCase().replace("_", " ")}</Badge>}
+              {b.google.mapsUri && (
+                <a className="text-xs text-blue hover:underline" href={b.google.mapsUri} target="_blank" rel="noreferrer" onClick={() => trackClick(id, "maps")}>Open in Google Maps</a>
+              )}
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
             <a className="text-blue hover:underline" href={mapsLink(b, b.name)} target="_blank" rel="noreferrer" onClick={() => trackClick(id, "maps")}>Google Maps</a>
             <a className="text-blue hover:underline" href={appleMapsLink(b, b.name)} target="_blank" rel="noreferrer" onClick={() => trackClick(id, "maps")}>Apple Maps</a>
             <AddToTripButton place={place} />
           </div>
           <p className="mt-2 text-[11px] text-muted">
-            Listing data from {b.provider === "osm" ? "OpenStreetMap" : b.provider === "ocm" ? "Open Charge Map" : b.provider === "demo" ? "sample data" : "online sources"}, synced {new Date(b.sourceSyncedAt).toLocaleDateString()}
+            Listing data from {b.provider === "google" ? "Google" : b.provider === "osm" ? "OpenStreetMap" : b.provider === "ocm" ? "Open Charge Map" : b.provider === "demo" ? "sample data" : "online sources"}, synced {new Date(b.sourceSyncedAt).toLocaleDateString()}
             {b.claimed ? ", with updates from the owner" : ""}.
           </p>
         </div>
@@ -179,14 +194,19 @@ export default function PlacePage() {
             <h2 className="font-bold">Photos</h2>
             <Button variant="ghost" onClick={() => setPanel(panel === "photo" ? null : "photo")}>📷 Add a photo</Button>
           </div>
-          {view.photos.length === 0 ? <p className="mt-1 text-sm text-muted">No photos yet. Be the first.</p> : (
+          {view.photos.length === 0 && !(b.google?.photoNames?.length) ? <p className="mt-1 text-sm text-muted">No photos yet. Be the first.</p> : (
             <div className="mt-2 grid grid-cols-3 gap-2">
               {view.photos.map((p) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={p.id} src={`/api/photos/${p.id}`} alt={p.caption ?? b.name} title={p.caption} className="aspect-square w-full rounded-lg object-cover" loading="lazy" />
               ))}
+              {(b.google?.photoNames ?? []).slice(0, 6).map((n) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={n} src={`/api/google/photo?name=${encodeURIComponent(n)}&w=600`} alt={b.name} title="Photo from Google" className="aspect-square w-full rounded-lg object-cover" loading="lazy" />
+              ))}
             </div>
           )}
+          {b.google?.photoNames?.length ? <p className="mt-1 text-[11px] text-muted">Some photos from Google.</p> : null}
         </div>
 
         <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
@@ -194,7 +214,24 @@ export default function PlacePage() {
             <h2 className="font-bold">Reviews</h2>
             <Button variant="ghost" onClick={() => setPanel(panel === "review" ? null : "review")}>✍️ Write a review</Button>
           </div>
-          {view.reviews.length === 0 ? <p className="mt-1 text-sm text-muted">No reviews yet.</p> : (
+          {b.google?.reviews?.length ? (
+            <div className="mt-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">From Google</p>
+              <ul className="mt-1 flex flex-col gap-2">
+                {b.google.reviews.map((r, i) => (
+                  <li key={i} className="rounded-lg bg-background p-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <Stars value={r.rating} />
+                      <span className="text-xs text-muted">{r.author} · {r.time}</span>
+                    </div>
+                    {r.text && <p className="mt-1 line-clamp-4">{r.text}</p>}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted">From RouteDiscover travelers</p>
+            </div>
+          ) : null}
+          {view.reviews.length === 0 ? <p className="mt-1 text-sm text-muted">No traveler reviews yet.</p> : (
             <ul className="mt-2 flex flex-col gap-2">
               {view.reviews.map((r) => (
                 <li key={r.id} className="rounded-lg bg-background p-2 text-sm">

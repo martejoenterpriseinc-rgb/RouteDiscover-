@@ -71,6 +71,12 @@ export type AppSettings = {
   };
   integrations: {
     stripe: { secretKey: string; publishableKey: string; webhookSecret: string };
+    /**
+     * Google Maps Platform. The browser key draws the map (Maps JavaScript API,
+     * restrict it by website); the server key powers Places, Routes and
+     * Geocoding (restrict it by IP). One key can be used for both.
+     */
+    google: { browserKey: string; serverKey: string; mapEnabled: boolean; placesEnabled: boolean; routingEnabled: boolean; geocodingEnabled: boolean; maxRequestsPerSearch: number };
     openChargeMap: { apiKey: string };
     routing: { osrmUrl: string };
     places: { overpassUrl: string };
@@ -85,6 +91,7 @@ export type AppSettings = {
 export const SECRET_PATHS = [
   "integrations.stripe.secretKey",
   "integrations.stripe.webhookSecret",
+  "integrations.google.serverKey",
   "integrations.openChargeMap.apiKey",
   "integrations.email.apiKey",
 ] as const;
@@ -140,6 +147,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   integrations: {
     stripe: { secretKey: "", publishableKey: "", webhookSecret: "" },
+    google: { browserKey: "", serverKey: "", mapEnabled: true, placesEnabled: true, routingEnabled: true, geocodingEnabled: true, maxRequestsPerSearch: 12 },
     openChargeMap: { apiKey: "" },
     routing: { osrmUrl: "https://router.project-osrm.org" },
     places: { overpassUrl: "https://overpass-api.de/api/interpreter" },
@@ -211,6 +219,11 @@ function withEnvFallback(s: AppSettings): AppSettings {
         publishableKey: i.stripe.publishableKey || env.STRIPE_PUBLISHABLE_KEY || "",
         webhookSecret: i.stripe.webhookSecret || env.STRIPE_WEBHOOK_SECRET || "",
       },
+      google: {
+        ...i.google,
+        browserKey: i.google.browserKey || env.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY || env.GOOGLE_MAPS_API_KEY || "",
+        serverKey: i.google.serverKey || env.GOOGLE_MAPS_API_KEY || "",
+      },
       openChargeMap: { apiKey: i.openChargeMap.apiKey || env.OPENCHARGEMAP_API_KEY || "" },
       routing: { osrmUrl: i.routing.osrmUrl || env.OSRM_URL || DEFAULT_SETTINGS.integrations.routing.osrmUrl },
       places: { overpassUrl: i.places.overpassUrl || env.OVERPASS_URL || DEFAULT_SETTINGS.integrations.places.overpassUrl },
@@ -278,6 +291,7 @@ export async function getDraftForConsole() {
     hasUnpublishedChanges: JSON.stringify(draft.data) !== JSON.stringify(live.data),
     envFallbacks: {
       stripe: !!process.env.STRIPE_SECRET_KEY,
+      google: !!process.env.GOOGLE_MAPS_API_KEY,
       openChargeMap: !!process.env.OPENCHARGEMAP_API_KEY,
       email: !!process.env.RESEND_API_KEY,
     },

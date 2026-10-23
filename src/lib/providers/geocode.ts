@@ -1,4 +1,5 @@
 import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
+import { googleGeocode } from "./google";
 import { DEMO_GEORESULTS } from "../demo/data";
 import type { GeoResult } from "../types";
 
@@ -62,5 +63,7 @@ function demoGeocode(q: string, limit: number): GeoResult[] {
 export async function geocode(q: string, limit = 5) {
   const direct = parseCoordinates(q);
   if (direct) return { source: "live" as const, data: [direct] };
-  return withFallback("Geocoder", () => liveGeocode(q, limit), () => demoGeocode(q, limit));
+  const cfg = await getProviderConfig();
+  const primary = cfg.google.geocoding ? { name: "Google Geocoding", run: () => googleGeocode(cfg.google, q, limit) } : null;
+  return withFallback("Geocoder", () => liveGeocode(q, limit), () => demoGeocode(q, limit), primary);
 }

@@ -25,7 +25,14 @@ export function sourceFromPlace(p: Place): BusinessSource {
     hours: p.openingHours,
     cuisine: t.cuisine,
     tags: p.tags,
-    provider: p.id.startsWith("osm-") ? "osm" : p.id.startsWith("ocm-") ? "ocm" : p.id.startsWith("demo-") ? "demo" : "unknown",
+    provider: p.id.startsWith("google-") ? "google" : p.id.startsWith("osm-") ? "osm" : p.id.startsWith("ocm-") ? "ocm" : p.id.startsWith("demo-") ? "demo" : "unknown",
+    rating: p.google?.rating,
+    ratingCount: p.google?.ratingCount,
+    priceLevel: p.google?.priceLevel,
+    summary: p.google?.summary,
+    mapsUri: p.google?.mapsUri,
+    photoNames: p.google?.photoNames,
+    googleReviews: p.google?.reviews,
   };
 }
 
@@ -60,6 +67,7 @@ export type PresentedBusiness = {
   specials?: string;
   cuisine?: string;
   provider: BusinessSource["provider"];
+  google?: { rating?: number; ratingCount?: number; priceLevel?: string; summary?: string; mapsUri?: string; photoNames?: string[]; reviews?: BusinessSource["googleReviews"] };
   claimed: boolean;
   sponsored: boolean;
   sponsorUntil: string | null;
@@ -86,6 +94,7 @@ export function present(b: Business): PresentedBusiness {
     specials: b.specials ?? undefined,
     cuisine: s.cuisine,
     provider: s.provider,
+    google: s.provider === "google" ? { rating: s.rating, ratingCount: s.ratingCount, priceLevel: s.priceLevel, summary: s.summary, mapsUri: s.mapsUri, photoNames: s.photoNames, reviews: s.googleReviews } : undefined,
     claimed: b.claimStatus === "claimed",
     sponsored,
     sponsorUntil: b.sponsorUntil?.toISOString() ?? null,

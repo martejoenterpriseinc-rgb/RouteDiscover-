@@ -21,7 +21,10 @@ export const config = {
   fetchTimeoutMs: Number(process.env.ROUTEDISCOVER_FETCH_TIMEOUT_MS || 25000),
 };
 
+export type GoogleConfig = { serverKey: string; places: boolean; routing: boolean; geocoding: boolean; maxRequestsPerSearch: number };
+
 export type ProviderConfig = {
+  google: GoogleConfig;
   osrmUrl: string;
   overpassUrl: string;
   nominatimUrl: string;
@@ -31,7 +34,16 @@ export type ProviderConfig = {
 
 export async function getProviderConfig(): Promise<ProviderConfig> {
   const s = await getLiveSettings();
+  const g = s.integrations.google;
+  const serverKey = g.serverKey || g.browserKey;
   return {
+    google: {
+      serverKey,
+      places: !!serverKey && g.placesEnabled,
+      routing: !!serverKey && g.routingEnabled,
+      geocoding: !!serverKey && g.geocodingEnabled,
+      maxRequestsPerSearch: Math.max(1, Math.min(60, g.maxRequestsPerSearch || 12)),
+    },
     osrmUrl: s.integrations.routing.osrmUrl.replace(/\/$/, ""),
     overpassUrl: s.integrations.places.overpassUrl,
     nominatimUrl: s.integrations.geocoding.nominatimUrl.replace(/\/$/, ""),
@@ -71,12 +83,21 @@ export async function withFallback<T>(
   provider: string,
   live: () => Promise<T>,
   demo: () => Promise<T> | T,
-): Promise<{ source: "live" | "demo"; data: T; notice?: string }> {
+  /** Optional preferred provider tried first (Google); falls through to `live` on failure. */
+  primary?: { name: string; run: () => Promise<T> } | null,
+): Promise<{ source: "live" | "demo"; data: T; notice?: string; via?: string }> {
   if (config.dataMode === "demo") {
     return { source: "demo", data: await demo(), notice: "Demo data mode is on." };
   }
+  if (primary) {
+    try {
+      return { source: "live", data: await primary.run(), via: primary.name };
+    } catch (err) {
+      console.warn(`[routediscover] ${primary.name} failed, falling back to ${provider}: ${err instanceof Error ? err.message : err}`);
+    }
+  }
   try {
-    return { source: "live", data: await live() };
+    return { source: "live", data: await live(), via: provider };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (config.dataMode === "live") throw new ProviderError(provider, msg);

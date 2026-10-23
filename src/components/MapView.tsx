@@ -1,9 +1,10 @@
 "use client";
 
 import L from "leaflet";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, Circle, useMap } from "react-leaflet";
 import { bounds as boundsOf } from "@/lib/geo";
+import { loadGoogleMaps, useMapConfig } from "@/lib/map-config";
 import type { LatLng } from "@/lib/types";
 
 export type MapMarker = {
@@ -34,6 +35,52 @@ const TILE_URL =
 const TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ||
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+/**
+ * Base map: Google Maps when the owner has entered a browser key (drawn by
+ * Leaflet.GoogleMutant), otherwise the configured raster tiles.
+ */
+function BaseLayer() {
+  const cfg = useMapConfig();
+  const map = useMap();
+  const [googleReady, setGoogleReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!cfg || cfg.provider !== "google" || !cfg.googleKey) return;
+    let cancelled = false;
+    loadGoogleMaps(cfg.googleKey).then((ok) => !cancelled && setGoogleReady(ok));
+    return () => {
+      cancelled = true;
+    };
+  }, [cfg]);
+
+  useEffect(() => {
+    if (!googleReady) return;
+    let layer: L.GridLayer | null = null;
+    let cancelled = false;
+    (async () => {
+      try {
+        // The GoogleMutant plugin registers itself on the global Leaflet object.
+        (window as unknown as { L: typeof L }).L = L;
+        await import("leaflet.gridlayer.googlemutant");
+        if (cancelled) return;
+        layer = (L.gridLayer as unknown as { googleMutant: (o: { type: string }) => L.GridLayer }).googleMutant({ type: "roadmap" });
+        layer.addTo(map);
+      } catch (err) {
+        console.warn("[routediscover] Google map layer unavailable, using tiles:", err);
+        setGoogleReady(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      layer?.remove();
+    };
+  }, [googleReady, map]);
+
+  if (!cfg) return null;
+  if (cfg.provider === "google" && cfg.googleKey && googleReady !== false) return null;
+  return <TileLayer url={cfg.tileUrl || TILE_URL} attribution={cfg.attribution || TILE_ATTRIBUTION} />;
+}
 
 function icon(m: MapMarker, selected: boolean) {
   return L.divIcon({
@@ -141,7 +188,7 @@ export default function MapView({ route, markers, selectedId, onSelect, here, ci
 
   return (
     <MapContainer center={center} zoom={fitPts[0] ? 10 : 4} className="h-full w-full" scrollWheelZoom>
-      <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+      <BaseLayer />
       <StopOnUnmount />
       <FitBounds pts={fitPts} fitKey={fitKey} />
       <FlyTo target={selected} />

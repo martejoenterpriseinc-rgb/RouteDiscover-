@@ -1,4 +1,5 @@
 import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
+import { googleRoute } from "./google";
 import { DEMO_GRAPH } from "../demo/data";
 import { haversineMiles } from "../geo";
 import type { GeoResult, LatLng, RouteResult } from "../types";
@@ -116,9 +117,12 @@ function demoRoute(origin: GeoResult, destination: GeoResult): Omit<RouteResult,
 }
 
 export async function route(origin: GeoResult, destination: GeoResult) {
+  const cfg = await getProviderConfig();
+  const primary = cfg.google.routing ? { name: "Google Routes", run: () => googleRoute(cfg.google, origin, destination) } : null;
   return withFallback(
     "Routing",
     () => liveRoute(origin, destination),
     () => demoRoute(origin, destination),
+    primary,
   );
 }

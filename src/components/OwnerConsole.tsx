@@ -9,7 +9,7 @@ export type ConsoleState = {
   draftUpdatedAt: string | null;
   livePublishedAt: string | null;
   hasUnpublishedChanges: boolean;
-  envFallbacks: { stripe: boolean; openChargeMap: boolean; email: boolean };
+  envFallbacks: { stripe: boolean; google: boolean; openChargeMap: boolean; email: boolean };
 };
 
 export const field = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none ring-blue/40 focus:ring-2";

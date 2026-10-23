@@ -37,6 +37,7 @@ async function draftSettings(): Promise<AppSettings> {
   const i = merged.integrations;
   i.stripe = { ...DEFAULT_SETTINGS.integrations.stripe, ...i.stripe, secretKey: decrypt(i.stripe?.secretKey ?? "") || process.env.STRIPE_SECRET_KEY || "", webhookSecret: decrypt(i.stripe?.webhookSecret ?? "") };
   i.openChargeMap = { apiKey: decrypt(i.openChargeMap?.apiKey ?? "") || process.env.OPENCHARGEMAP_API_KEY || "" };
+  i.google = { ...DEFAULT_SETTINGS.integrations.google, ...i.google, serverKey: decrypt(i.google?.serverKey ?? "") || i.google?.browserKey || process.env.GOOGLE_MAPS_API_KEY || "" };
   i.email = { ...DEFAULT_SETTINGS.integrations.email, ...i.email, apiKey: decrypt(i.email?.apiKey ?? "") || process.env.RESEND_API_KEY || "" };
   i.custom = (i.custom ?? []).map((c) => ({ ...c, authValue: decrypt(c.authValue ?? "") }));
   return merged;
@@ -59,6 +60,19 @@ export async function POST(req: Request) {
           const balance = await stripe.balance.retrieve();
           const mode = i.stripe.secretKey.startsWith("sk_live") ? "LIVE" : "test";
           return `Connected to Stripe (${mode} mode, ${balance.livemode ? "live" : "test"} data).${i.stripe.webhookSecret ? "" : " Add the webhook signing secret to receive subscription updates."}`;
+        });
+        break;
+      case "google":
+        result = await timed(async () => {
+          if (!i.google.serverKey) throw new Error("No Google key saved.");
+          const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
+          url.searchParams.set("address", "Lancaster, PA");
+          url.searchParams.set("key", i.google.serverKey);
+          const res = await withTimeout(url.toString());
+          const j = (await res.json()) as { status: string; error_message?: string; results?: Array<{ formatted_address: string }> };
+          if (j.status !== "OK") throw new Error(`${j.status}${j.error_message ? `: ${j.error_message}` : ""}`);
+          const places = await withTimeout("https://places.googleapis.com/v1/places:searchNearby", { method: "POST", headers: { "X-Goog-Api-Key": i.google.serverKey, "X-Goog-FieldMask": "places.id", "Content-Type": "application/json" }, body: JSON.stringify({ includedTypes: ["restaurant"], maxResultCount: 1, locationRestriction: { circle: { center: { latitude: 40.0379, longitude: -76.3055 }, radius: 2000 } } }) });
+          return `Geocoding OK (${j.results?.[0]?.formatted_address}). Places API (New): ${places.ok ? "OK" : `HTTP ${places.status}, enable “Places API (New)” for this key`}.`;
         });
         break;
       case "openChargeMap":

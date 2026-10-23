@@ -26,6 +26,8 @@ export async function POST(req: Request) {
       phone: str(o.phone, 50) || undefined,
       openingHours: str(o.openingHours, 300) || undefined,
       tags: o.tags && typeof o.tags === "object" ? (o.tags as Record<string, string>) : undefined,
+      provider: o.provider === "google" || o.provider === "osm" || o.provider === "ocm" || o.provider === "demo" ? o.provider : undefined,
+      google: o.google && typeof o.google === "object" ? (o.google as Place["google"]) : undefined,
     };
     const row = await ensureListing(place);
     return json({ id: row.id });

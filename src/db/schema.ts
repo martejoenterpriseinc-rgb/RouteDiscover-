@@ -204,7 +204,15 @@ export type BusinessSource = {
   hours?: string;
   cuisine?: string;
   tags?: Record<string, string>;
-  provider: "osm" | "ocm" | "demo" | "unknown";
+  provider: "google" | "osm" | "ocm" | "demo" | "unknown";
+  /* Google Places baseline (shown until the business or travelers update it) */
+  rating?: number;
+  ratingCount?: number;
+  priceLevel?: string;
+  summary?: string;
+  mapsUri?: string;
+  photoNames?: string[];
+  googleReviews?: Array<{ author: string; rating: number; text: string; time: string }>;
 };
 
 export const businesses = pgTable(

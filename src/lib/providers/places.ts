@@ -1,6 +1,7 @@
 import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { CATEGORY_BY_ID, categorize } from "../categories";
 import { DEMO_HOTELS, DEMO_PLACES, DEMO_SUPERCHARGERS } from "../demo/data";
+import { googleLookup, googlePlaces } from "./google";
 import { METERS_PER_MILE, distanceToRoute, haversineMiles, indexRoute, simplifyTo } from "../geo";
 import type { CategoryId, LatLng, Place } from "../types";
 
@@ -103,7 +104,9 @@ export function scopePlaces<T extends LatLng>(items: T[], search: PlaceSearch): 
 }
 
 export async function searchPlaces(search: PlaceSearch) {
-  const r = await withFallback("Places", () => livePlaces(search), () => demoPlaces(search));
+  const cfg = await getProviderConfig();
+  const primary = cfg.google.places ? { name: "Google Places", run: () => googlePlaces(cfg.google, search) } : null;
+  const r = await withFallback("Places", () => livePlaces(search), () => demoPlaces(search), primary);
   return { ...r, data: scopePlaces(r.data, search) };
 }
 
@@ -140,6 +143,7 @@ async function liveLookup(id: string): Promise<Place | null> {
     phone: tags.phone || tags["contact:phone"],
     openingHours: tags.opening_hours,
     tags,
+    provider: "osm",
   };
 }
 
@@ -164,5 +168,9 @@ function demoLookup(id: string): Place | null {
 
 export async function lookupPlace(id: string) {
   if (id.startsWith("demo-")) return { source: "demo" as const, data: demoLookup(id) };
+  if (id.startsWith("google-")) {
+    const cfg = await getProviderConfig();
+    return withFallback("Google Places", () => googleLookup(cfg.google, id), () => null);
+  }
   return withFallback("Places", () => liveLookup(id), () => demoLookup(id));
 }

@@ -63,6 +63,18 @@ export type Place = {
   phone?: string;
   openingHours?: string;
   tags?: Record<string, string>;
+  /** Provider that produced this record. */
+  provider?: "google" | "osm" | "ocm" | "demo";
+  /** Google Places extras, when available. */
+  google?: {
+    rating?: number;
+    ratingCount?: number;
+    priceLevel?: string;
+    summary?: string;
+    mapsUri?: string;
+    photoNames?: string[];
+    reviews?: Array<{ author: string; rating: number; text: string; time: string }>;
+  };
   /* Listing layer (claimed businesses, sponsorship, community ratings) */
   listingId?: string;
   claimed?: boolean;

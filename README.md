@@ -63,7 +63,9 @@ The web app ships a manifest and icons, so it installs to iOS and Android home s
 
 ## Data sources
 
-Everything runs on free, open data with no API keys required:
+**Google first, OpenStreetMap as the fallback.** Enter a Google Maps Platform key in Owner → Integrations and the map is drawn by Google Maps, driving routes come from the Routes API, address lookup from the Geocoding API, and search results and listing pages use Google Places: address, hours, phone, website, rating, review count, Google reviews and photos. That Google baseline stays on each listing until the business owner edits it or a traveler's update is approved. Any Google failure (or no key) falls through to the open providers below automatically. Long route searches are sampled at an owner-set number of points to keep Places billing predictable.
+
+Without any keys, everything runs on free, open data:
 
 | Need | Provider | Notes |
 | --- | --- | --- |
