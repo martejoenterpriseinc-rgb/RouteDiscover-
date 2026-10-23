@@ -194,6 +194,7 @@ export async function listUsersForOwner(limit = 200) {
     email: u.email,
     name: u.name,
     role: u.role,
+    banned: u.banned,
     createdAt: u.createdAt.toISOString(),
     lastSeenAt: u.lastSeenAt?.toISOString() ?? null,
     referred: !!u.referredBy,

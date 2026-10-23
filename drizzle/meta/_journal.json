@@ -36,6 +36,13 @@
       "when": 1792760403306,
       "tag": "0004_api_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792760753220,
+      "tag": "0005_password_resets",
+      "breakpoints": true
     }
   ]
 }

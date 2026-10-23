@@ -394,3 +394,18 @@ export const apiUsage = pgTable(
   },
   (t) => [uniqueIndex("api_usage_idx").on(t.month, t.provider, t.kind)],
 );
+
+export const passwordResets = pgTable(
+  "password_resets",
+  {
+    /** sha256 of the token in the link */
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("password_resets_user_idx").on(t.userId)],
+);

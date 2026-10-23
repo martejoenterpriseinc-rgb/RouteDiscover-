@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui";
+import { UserActions } from "@/components/UserActions";
 import { listUsersForOwner } from "@/lib/stats";
 
 export const metadata: Metadata = { title: "Users" };
@@ -20,6 +21,7 @@ export default async function OwnerUsersPage() {
               <th className="px-3 py-2">Trips</th>
               <th className="px-3 py-2">Joined</th>
               <th className="px-3 py-2">Last seen</th>
+              <th className="px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -36,6 +38,7 @@ export default async function OwnerUsersPage() {
                 <td className="px-3 py-2">{u.trips}</td>
                 <td className="px-3 py-2 text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-3 py-2 text-muted">{u.lastSeenAt ? new Date(u.lastSeenAt).toLocaleString() : "never"}</td>
+                <td className="px-3 py-2"><UserActions id={u.id} role={u.role} banned={u.banned} /></td>
               </tr>
             ))}
           </tbody>

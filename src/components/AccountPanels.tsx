@@ -192,3 +192,40 @@ export function SignOutButton() {
     </Button>
   );
 }
+
+export function DeleteAccountPanel() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Card title="Delete account" subtitle="Removes your profile, trips, preferences and subscription records. Claimed businesses return to unclaimed. This can't be undone.">
+      {!open ? (
+        <div><Button variant="secondary" onClick={() => setOpen(true)}>Delete my account…</Button></div>
+      ) : (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            setError(null);
+            const res = await fetch("/api/me/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+            const j = (await res.json()) as { error?: string };
+            setBusy(false);
+            if (!res.ok) return setError(j.error ?? "Could not delete.");
+            router.push("/");
+            router.refresh();
+          }}
+        >
+          <input className={field} type="password" placeholder="Confirm your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          {error && <ErrorNote>{error}</ErrorNote>}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={busy} className="bg-gradient-to-r from-coral to-coral">{busy ? "Deleting…" : "Permanently delete"}</Button>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+          </div>
+        </form>
+      )}
+    </Card>
+  );
+}

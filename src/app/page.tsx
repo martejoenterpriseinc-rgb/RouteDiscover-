@@ -151,6 +151,8 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-6 text-sm text-muted">
           <Wordmark className="text-base" />
           <span>© {new Date().getFullYear()} {s.app.name}</span>
+          <Link className="hover:text-foreground" href="/terms">Terms</Link>
+          <Link className="hover:text-foreground" href="/privacy">Privacy</Link>
           {s.app.supportEmail && <a className="hover:text-foreground" href={`mailto:${s.app.supportEmail}`}>Support</a>}
           <span className="ml-auto flex gap-3">
             {socials.map((x) => (
