@@ -89,7 +89,7 @@ export function TripPlanner({ compact = false, onPlanned }: { compact?: boolean;
         value={trip.radiusMiles}
         min={1}
         max={50}
-        onChange={(v) => update({ radiusMiles: v })}
+        onChange={(v) => update({ radiusMiles: v, radiusTouched: true })}
       />
       {geo.error && <ErrorNote>{geo.error}</ErrorNote>}
       {error && <ErrorNote>{error}</ErrorNote>}

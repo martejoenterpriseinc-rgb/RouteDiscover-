@@ -1,4 +1,4 @@
-import { config, fetchWithTimeout, withFallback } from "../config";
+import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { DEMO_GEORESULTS } from "../demo/data";
 import type { GeoResult } from "../types";
 
@@ -17,7 +17,8 @@ export function parseCoordinates(q: string): GeoResult | null {
 type NominatimHit = { display_name: string; lat: string; lon: string };
 
 async function liveGeocode(q: string, limit: number): Promise<GeoResult[]> {
-  const url = new URL(`${config.nominatimUrl}/search`);
+  const cfg = await getProviderConfig();
+  const url = new URL(`${cfg.nominatimUrl}/search`);
   url.searchParams.set("q", q);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", String(limit));

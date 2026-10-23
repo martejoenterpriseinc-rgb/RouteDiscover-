@@ -123,3 +123,11 @@ input[type="range"] {
 .hide-scrollbar {
   scrollbar-width: none;
 }
+
+/* Wordmark on dark surfaces (owner console header) */
+.wordmark-light .route {
+  color: #ffffff;
+}
+.wordmark-light .discover {
+  color: var(--sky);
+}

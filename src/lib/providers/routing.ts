@@ -1,4 +1,4 @@
-import { config, fetchWithTimeout, withFallback } from "../config";
+import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { DEMO_GRAPH } from "../demo/data";
 import { haversineMiles } from "../geo";
 import type { GeoResult, LatLng, RouteResult } from "../types";
@@ -14,7 +14,8 @@ type OsrmResponse = {
 
 async function liveRoute(origin: GeoResult, destination: GeoResult): Promise<Omit<RouteResult, "source">> {
   const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
-  const url = `${config.osrmUrl}/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
+  const cfg = await getProviderConfig();
+  const url = `${cfg.osrmUrl}/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
   const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = (await res.json()) as OsrmResponse;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ActiveTripBanner, AddToTripButton } from "@/components/AddToTrip";
 import { PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { PlaceInput } from "@/components/PlaceInput";
@@ -42,6 +43,8 @@ export default function DestinationPage() {
   return (
     <SplitLayout
       controls={
+        <>
+        <ActiveTripBanner />
         <form
           className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-3"
           onSubmit={(e) => {
@@ -69,6 +72,7 @@ export default function DestinationPage() {
           </Button>
           <SourceBanner source={search.source} notice={search.notice} />
         </form>
+        </>
       }
       list={
         searchKey ? (
@@ -82,7 +86,7 @@ export default function DestinationPage() {
             )}
             <ul className="flex flex-col gap-2">
               {search.data.map((p) => (
-                <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} />
+                <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<AddToTripButton place={p} />} />
               ))}
             </ul>
           </>

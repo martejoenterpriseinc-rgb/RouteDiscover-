@@ -56,7 +56,7 @@ function fit(map: L.Map, pts: LatLng[]) {
   const b = boundsOf(pts);
   if (!b) return;
   if (pts.length === 1) {
-    map.setView([pts[0].lat, pts[0].lng], 12);
+    map.setView([pts[0].lat, pts[0].lng], 12, { animate: false });
     return;
   }
   map.fitBounds(
@@ -64,7 +64,7 @@ function fit(map: L.Map, pts: LatLng[]) {
       [b[0].lat, b[0].lng],
       [b[1].lat, b[1].lng],
     ],
-    { padding: [30, 30] },
+    { padding: [30, 30], animate: false },
   );
 }
 
@@ -108,6 +108,24 @@ function FlyTo({ target }: { target: LatLng | null | undefined }) {
   return null;
 }
 
+/** Abort any running pan/zoom animation before the map is torn down (otherwise Leaflet throws on the removed panes). */
+function StopOnUnmount() {
+  const map = useMap();
+  useEffect(() => {
+    return () => {
+      try {
+        map.stop();
+        // A CSS zoom transition can finish after the panes are gone; clearing the
+        // flag makes Leaflet ignore that late transitionend event.
+        (map as unknown as { _animatingZoom?: boolean })._animatingZoom = false;
+      } catch {
+        /* already removed */
+      }
+    };
+  }, [map]);
+  return null;
+}
+
 export default function MapView({ route, markers, selectedId, onSelect, here, circle, fitKey }: MapViewProps) {
   const fitPts = useMemo(() => {
     const pts: LatLng[] = [];
@@ -124,6 +142,7 @@ export default function MapView({ route, markers, selectedId, onSelect, here, ci
   return (
     <MapContainer center={center} zoom={fitPts[0] ? 10 : 4} className="h-full w-full" scrollWheelZoom>
       <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+      <StopOnUnmount />
       <FitBounds pts={fitPts} fitKey={fitKey} />
       <FlyTo target={selected} />
       {route && route.length > 1 && (

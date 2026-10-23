@@ -1,7 +1,10 @@
 /**
- * Runtime configuration. Everything has a free default so the app runs with
- * no keys; set values in `.env.local` to point at your own services.
+ * Runtime configuration for the data providers. Values come from the owner's
+ * live settings (console) with environment-variable fallbacks; everything has
+ * a free default so the app runs with no keys.
  */
+import { getLiveSettings } from "./settings";
+
 export type DataMode = "auto" | "live" | "demo";
 
 export const config = {
@@ -11,15 +14,31 @@ export const config = {
    * demo  – bundled demo data only (offline / development)
    */
   dataMode: ((process.env.ROUTEDISCOVER_DATA_MODE as DataMode) || "auto") as DataMode,
-  osrmUrl: process.env.OSRM_URL || "https://router.project-osrm.org",
-  overpassUrl: process.env.OVERPASS_URL || "https://overpass-api.de/api/interpreter",
-  nominatimUrl: process.env.NOMINATIM_URL || "https://nominatim.openstreetmap.org",
-  openChargeMapUrl: process.env.OPENCHARGEMAP_URL || "https://api.openchargemap.io/v3",
-  openChargeMapKey: process.env.OPENCHARGEMAP_API_KEY || "",
   /** Identify ourselves to the public OSM services, as their usage policies ask. */
-  userAgent: process.env.ROUTEDISCOVER_USER_AGENT || "RouteDiscover/0.1 (https://github.com/martejoenterpriseinc-rgb/RouteDiscover-)",
+  userAgent:
+    process.env.ROUTEDISCOVER_USER_AGENT ||
+    "RouteDiscover/0.1 (https://github.com/martejoenterpriseinc-rgb/RouteDiscover-)",
   fetchTimeoutMs: Number(process.env.ROUTEDISCOVER_FETCH_TIMEOUT_MS || 25000),
 };
+
+export type ProviderConfig = {
+  osrmUrl: string;
+  overpassUrl: string;
+  nominatimUrl: string;
+  openChargeMapUrl: string;
+  openChargeMapKey: string;
+};
+
+export async function getProviderConfig(): Promise<ProviderConfig> {
+  const s = await getLiveSettings();
+  return {
+    osrmUrl: s.integrations.routing.osrmUrl.replace(/\/$/, ""),
+    overpassUrl: s.integrations.places.overpassUrl,
+    nominatimUrl: s.integrations.geocoding.nominatimUrl.replace(/\/$/, ""),
+    openChargeMapUrl: process.env.OPENCHARGEMAP_URL || "https://api.openchargemap.io/v3",
+    openChargeMapKey: s.integrations.openChargeMap.apiKey,
+  };
+}
 
 export async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
   const ctrl = new AbortController();

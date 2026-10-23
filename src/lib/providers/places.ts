@@ -1,4 +1,4 @@
-import { config, fetchWithTimeout, withFallback } from "../config";
+import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { CATEGORY_BY_ID, categorize } from "../categories";
 import { DEMO_PLACES } from "../demo/data";
 import { METERS_PER_MILE, distanceToRoute, haversineMiles, indexRoute, simplifyTo } from "../geo";
@@ -42,7 +42,8 @@ function addressOf(t: Record<string, string>): string | undefined {
 
 async function livePlaces(search: PlaceSearch): Promise<Place[]> {
   const q = buildOverpassQuery(search);
-  const res = await fetchWithTimeout(config.overpassUrl, {
+  const cfg = await getProviderConfig();
+  const res = await fetchWithTimeout(cfg.overpassUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: `data=${encodeURIComponent(q)}`,

@@ -1,4 +1,4 @@
-import { config, fetchWithTimeout, withFallback } from "../config";
+import { fetchWithTimeout, getProviderConfig, withFallback } from "../config";
 import { DEMO_HOTELS, DEMO_SUPERCHARGERS } from "../demo/data";
 import { encodePolyline, haversineMiles, simplifyTo } from "../geo";
 import type { Charger, Hotel, LatLng, Place } from "../types";
@@ -81,7 +81,8 @@ function ocmToCharger(p: OcmPoi): RawCharger | null {
 }
 
 async function liveOcm(search: ChargerSearch, opts: { teslaOnly: boolean }): Promise<RawCharger[]> {
-  const url = new URL(`${config.openChargeMapUrl}/poi/`);
+  const cfg = await getProviderConfig();
+  const url = new URL(`${cfg.openChargeMapUrl}/poi/`);
   url.searchParams.set("output", "json");
   url.searchParams.set("compact", "false");
   url.searchParams.set("verbose", "false");
@@ -101,7 +102,7 @@ async function liveOcm(search: ChargerSearch, opts: { teslaOnly: boolean }): Pro
     url.searchParams.set("levelid", "3");
   }
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (config.openChargeMapKey) headers["X-API-Key"] = config.openChargeMapKey;
+  if (cfg.openChargeMapKey) headers["X-API-Key"] = cfg.openChargeMapKey;
   const res = await fetchWithTimeout(url.toString(), { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const pois = (await res.json()) as OcmPoi[];

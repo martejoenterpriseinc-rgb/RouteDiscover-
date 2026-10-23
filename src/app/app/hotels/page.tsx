@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ActiveTripBanner, AddToTripButton, hotelAsPlace } from "@/components/AddToTrip";
 import { HotelCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { PlaceInput } from "@/components/PlaceInput";
@@ -79,6 +80,7 @@ export default function HotelsPage() {
 
   const controls = (
     <div className="flex flex-col gap-3">
+      <ActiveTripBanner />
       <div className="rounded-xl border border-border bg-surface p-3">
         <h1 className="font-semibold">🏨 Hotels with EV charging</h1>
         <p className="mt-1 text-xs text-muted">
@@ -183,7 +185,7 @@ export default function HotelsPage() {
       )}
       <ul className="flex flex-col gap-2">
         {visible.map((h) => (
-          <HotelCard key={h.id} hotel={h} selected={selected === h.id} onClick={() => setSelected(h.id)} />
+          <HotelCard key={h.id} hotel={h} selected={selected === h.id} onClick={() => setSelected(h.id)} action={<AddToTripButton place={hotelAsPlace(h)} />} />
         ))}
       </ul>
     </>

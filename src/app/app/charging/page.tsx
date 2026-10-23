@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ActiveTripBanner, AddToTripButton, chargerAsPlace } from "@/components/AddToTrip";
 import { ChargerCard, PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { SplitLayout } from "@/components/SplitLayout";
@@ -78,6 +79,7 @@ export default function ChargingPage() {
 
   const controls = (
     <div className="flex flex-col gap-3">
+      <ActiveTripBanner />
       <div className="rounded-xl border border-border bg-surface p-3">
         <h1 className="font-semibold">⚡ Tesla Supercharger stops</h1>
         <p className="mt-1 text-xs text-muted">
@@ -159,7 +161,7 @@ export default function ChargingPage() {
           ) : (
             <ul className="mt-2 flex flex-col gap-2">
               {nearby.data.map((p) => (
-                <PlaceCard key={p.id} place={p} />
+                <PlaceCard key={p.id} place={p} action={<AddToTripButton place={p} />} />
               ))}
             </ul>
           )}
@@ -185,17 +187,20 @@ export default function ChargingPage() {
             selected={selected === c.id}
             onClick={() => setSelected(c.id)}
             action={
-              selected !== c.id && (
-                <Button
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelected(c.id);
-                  }}
-                >
-                  🚶 What&apos;s walkable while I charge?
-                </Button>
-              )
+              <div className="flex flex-wrap gap-2">
+                {selected !== c.id && (
+                  <Button
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(c.id);
+                    }}
+                  >
+                    🚶 What&apos;s walkable while I charge?
+                  </Button>
+                )}
+                <AddToTripButton place={chargerAsPlace(c)} />
+              </div>
             }
           />
         ))}

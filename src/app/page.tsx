@@ -1,129 +1,154 @@
-"use client";
-
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/AppNav";
-import { PlaceCard } from "@/components/Cards";
-import { Map } from "@/components/Map";
-import { SplitLayout } from "@/components/SplitLayout";
-import { TripPlanner } from "@/components/TripPlanner";
-import { Button, CategoryChips, Empty, ErrorNote, SourceBanner } from "@/components/ui";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { useSearch } from "@/hooks/useSearch";
-import { useTrip } from "@/hooks/useTrip";
-import { DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
-import { fetchPlaces } from "@/lib/client";
-import { distanceToRoute, indexRoute } from "@/lib/geo";
-import { placeMarker } from "@/lib/markers";
-import type { CategoryId, Place } from "@/lib/types";
+import { DownloadButtons } from "@/components/Landing";
+import { getCurrentUser } from "@/lib/auth";
+import { track } from "@/lib/events";
+import { formatPrice, getLiveSettings } from "@/lib/settings";
 
-const NO_PLACES: Place[] = [];
+const FEATURES = [
+  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and see attractions, food, outdoors, history, antiques and more, sorted by mile marker." },
+  { icon: "📍", title: "Destination lookup", text: "Arrive knowing what's around you. Search any radius around your destination by category." },
+  { icon: "⚡", title: "Supercharger stops that don't waste time", text: "Tesla Superchargers along the way, plus what's walkable while you charge: coffee, food, shopping, restrooms." },
+  { icon: "🏨", title: "Hotels with chargers", text: "Sleep where you can plug in. Free vs paid charging, Tesla Destination chargers and guest-only access, all flagged." },
+  { icon: "🗓️", title: "Plan it on a calendar", text: "Save trips with dates, build your stop list, and look back on your travel history." },
+  { icon: "🔗", title: "Share and invite", text: "Send a trip link, invite friends, and post your route to social media." },
+];
 
-export default function RoutePage() {
-  const { trip } = useTrip();
-  const geo = useGeolocation();
-  const [categories, setCategories] = useState<CategoryId[]>(DEFAULT_ROUTE_CATEGORIES);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [aheadOnly, setAheadOnly] = useState(false);
+export default async function LandingPage() {
+  const user = await getCurrentUser();
+  if (user) redirect("/app");
+  const s = await getLiveSettings();
+  const anonId = (await cookies()).get("rd_anon")?.value ?? null;
+  void track("landing_view", { anonId });
 
-  const route = trip.route;
-  const routeKey = route ? `${route.origin.lat},${route.origin.lng}>${route.destination.lat},${route.destination.lng}` : "";
-  const searchKey = route && categories.length ? `${routeKey}|${trip.radiusMiles}|${categories.join(",")}` : "";
-
-  const search = useSearch(
-    searchKey,
-    () => fetchPlaces({ route: route!.geometry, radiusMiles: trip.radiusMiles }, categories),
-    NO_PLACES,
-  );
-
-  const myMile = useMemo(() => {
-    if (!route || !geo.position) return null;
-    const d = distanceToRoute(geo.position, indexRoute(route.geometry));
-    return d.detourMiles <= 25 ? d.alongMiles : null;
-  }, [route, geo.position]);
-
-  const visible = useMemo(() => {
-    if (!aheadOnly || myMile == null) return search.data;
-    return search.data.filter((p) => (p.alongMiles ?? 0) >= myMile - 1);
-  }, [search.data, aheadOnly, myMile]);
-
-  const markers = useMemo(() => visible.map(placeMarker), [visible]);
-
-  const controls = (
-    <>
-      {!route && (
-        <div className="flex flex-col items-center gap-2 rounded-xl bg-gradient-to-br from-cream to-surface p-4 text-center">
-          <Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={160} height={160} priority className="h-28 w-28" />
-          <h1 className="text-lg">
-            <Wordmark className="text-2xl" />
-          </h1>
-          <p className="text-sm text-muted">
-            Plan a drive, pick how many miles off the highway you&apos;re willing to go, and see everything
-            worth stopping for along the way.
-          </p>
-        </div>
-      )}
-      <TripPlanner compact />
-      {route && (
-        <>
-          <SourceBanner source={search.source} notice={search.notice} />
-          <CategoryChips value={categories} onChange={setCategories} />
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <Button
-              variant={aheadOnly ? "primary" : "secondary"}
-              onClick={async () => {
-                if (!aheadOnly && !geo.position) await geo.locate();
-                setAheadOnly((v) => !v);
-              }}
-              disabled={geo.loading}
-            >
-              🧭 {aheadOnly ? "Showing what's ahead" : "Only show what's ahead of me"}
-            </Button>
-            {aheadOnly && myMile == null && !geo.loading && (
-              <span className="text-xs text-muted">{geo.error ?? "You don't seem to be on this route yet."}</span>
-            )}
-            {myMile != null && <span className="text-xs text-muted">You&apos;re near mile {Math.round(myMile)}</span>}
-          </div>
-        </>
-      )}
-    </>
-  );
-
-  const list = !route ? null : (
-    <>
-      {search.error && <ErrorNote>{search.error}</ErrorNote>}
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">
-          {search.loading ? "Searching along your route…" : `${visible.length} stops within ${trip.radiusMiles} mi`}
-        </h2>
-        <span className="text-xs text-muted">sorted by mile marker</span>
-      </div>
-      {categories.length === 0 && <Empty>Pick at least one category.</Empty>}
-      {search.done && visible.length === 0 && !search.error && (
-        <Empty>Nothing found for those categories. Try widening the miles-off-route slider or adding categories.</Empty>
-      )}
-      <ul className="flex flex-col gap-2">
-        {visible.map((p) => (
-          <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} />
-        ))}
-      </ul>
-    </>
-  );
+  const price = formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency);
+  const socials = [
+    { label: "X", href: s.app.socialX },
+    { label: "Facebook", href: s.app.socialFacebook },
+    { label: "Instagram", href: s.app.socialInstagram },
+  ].filter((x) => x.href);
 
   return (
-    <SplitLayout
-      controls={controls}
-      list={list}
-      map={
-        <Map
-          route={route?.geometry}
-          markers={markers}
-          selectedId={selected}
-          onSelect={setSelected}
-          here={geo.position}
-          fitKey={routeKey || "none"}
-        />
-      }
-    />
+    <div className="flex flex-1 flex-col">
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="h-10 w-auto" />
+            <Wordmark className="text-xl" />
+          </Link>
+          <nav className="ml-auto flex items-center gap-2 text-sm font-semibold">
+            <a href="#features" className="hidden px-3 text-muted hover:text-foreground md:block">Features</a>
+            <a href="#pricing" className="hidden px-3 text-muted hover:text-foreground md:block">Pricing</a>
+            <Link href="/login" className="rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
+            <Link href="/signup" className="rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
+          </nav>
+        </div>
+      </header>
+
+      <section className="bg-gradient-to-b from-cream to-background">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-14 md:grid-cols-2 md:py-20">
+          <div>
+            <p className="mb-3 inline-block rounded-full border border-orange/50 bg-surface px-3 py-1 text-xs font-semibold text-orange">
+              Built for road trips and EV drivers
+            </p>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
+              Never drive past the good stuff again.
+            </h1>
+            <p className="mt-4 text-lg text-muted">{s.app.tagline}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
+                Start your {s.pricing.trialDays > 0 ? `${s.pricing.trialDays}-day free trial` : "trip"}
+              </Link>
+              <a href="#features" className="rounded-xl border border-border bg-surface px-6 py-3 text-base font-semibold hover:bg-cream">
+                See how it works
+              </a>
+            </div>
+            <p className="mt-3 text-sm text-muted">
+              {price}/month after the trial. Cancel anytime.
+            </p>
+            <div className="mt-6">
+              <DownloadButtons appStoreUrl={s.app.appStoreUrl} playStoreUrl={s.app.playStoreUrl} compact />
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={420} height={420} priority className="h-64 w-64 drop-shadow-xl md:h-96 md:w-96" />
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="mx-auto w-full max-w-6xl px-4 py-14">
+        <h2 className="text-center text-3xl font-extrabold tracking-tight">Everything a long drive needs</h2>
+        <p className="mx-auto mt-2 max-w-2xl text-center text-muted">
+          RouteDiscover was born on a drive from Illinois to Lancaster, PA, where finding things to do along the way was harder than it should be.
+        </p>
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <div className="text-3xl" aria-hidden>{f.icon}</div>
+              <h3 className="mt-2 font-bold">{f.title}</h3>
+              <p className="mt-1 text-sm text-muted">{f.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="pricing" className="bg-navy text-white">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 py-14 md:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-extrabold tracking-tight">One simple plan</h2>
+            <p className="mt-2 text-white/80">Everything included. No ads, no upsells, no per-trip fees.</p>
+            <ul className="mt-6 space-y-2">
+              {s.pricing.features.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-sm">
+                  <span className="mt-0.5 text-green" aria-hidden>✔</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-3xl bg-surface p-8 text-foreground shadow-2xl">
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted">RouteDiscover monthly</p>
+            <p className="mt-2 flex items-baseline gap-1">
+              <span className="text-5xl font-extrabold tracking-tight">{price}</span>
+              <span className="text-muted">/ month</span>
+            </p>
+            {s.pricing.trialDays > 0 && (
+              <p className="mt-1 text-sm font-semibold text-green">{s.pricing.trialDays}-day free trial, then {price}/month</p>
+            )}
+            <p className="mt-1 text-sm text-muted">Billed monthly. Cancel anytime from your account.</p>
+            <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
+              Create your account
+            </Link>
+            <p className="mt-3 text-center text-xs text-muted">Secure payments by Stripe</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 py-14 text-center">
+        <h2 className="text-3xl font-extrabold tracking-tight">Take it on the road</h2>
+        <p className="mx-auto mt-2 max-w-xl text-muted">
+          Use RouteDiscover in your browser today, or install it on your phone. Native iPhone and Android apps are on the way.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <DownloadButtons appStoreUrl={s.app.appStoreUrl} playStoreUrl={s.app.playStoreUrl} />
+        </div>
+      </section>
+
+      <footer className="border-t border-border bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-4 py-6 text-sm text-muted">
+          <Wordmark className="text-base" />
+          <span>© {new Date().getFullYear()} {s.app.name}</span>
+          {s.app.supportEmail && <a className="hover:text-foreground" href={`mailto:${s.app.supportEmail}`}>Support</a>}
+          <span className="ml-auto flex gap-3">
+            {socials.map((x) => (
+              <a key={x.label} href={x.href} target="_blank" rel="noreferrer" className="hover:text-foreground">{x.label}</a>
+            ))}
+          </span>
+        </div>
+      </footer>
+    </div>
   );
 }

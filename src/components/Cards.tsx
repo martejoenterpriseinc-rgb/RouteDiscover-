@@ -64,7 +64,7 @@ function Card({
   );
 }
 
-export function PlaceCard({ place, selected, onClick }: { place: Place; selected?: boolean; onClick?: () => void }) {
+export function PlaceCard({ place, selected, onClick, action }: { place: Place; selected?: boolean; onClick?: () => void; action?: React.ReactNode }) {
   const cat = CATEGORY_BY_ID[place.category];
   return (
     <Card selected={selected} onClick={onClick}>
@@ -83,6 +83,7 @@ export function PlaceCard({ place, selected, onClick }: { place: Place; selected
           </p>
           {place.openingHours && <p className="mt-1 text-xs text-muted">Hours: {place.openingHours}</p>}
           <Links item={place} />
+          {action && <div className="mt-2">{action}</div>}
         </div>
       </div>
     </Card>
@@ -115,7 +116,7 @@ export function ChargerCard({ charger, selected, onClick, action }: { charger: C
   );
 }
 
-export function HotelCard({ hotel, selected, onClick }: { hotel: Hotel; selected?: boolean; onClick?: () => void }) {
+export function HotelCard({ hotel, selected, onClick, action }: { hotel: Hotel; selected?: boolean; onClick?: () => void; action?: React.ReactNode }) {
   const tier = hotel.chargerTier;
   return (
     <Card selected={selected} onClick={onClick}>
@@ -151,6 +152,7 @@ export function HotelCard({ hotel, selected, onClick }: { hotel: Hotel; selected
           )}
           {hotel.chargerNotes && <p className="mt-1 text-xs text-muted">Note: {hotel.chargerNotes}</p>}
           <Links item={hotel} />
+          {action && <div className="mt-2">{action}</div>}
         </div>
       </div>
     </Card>

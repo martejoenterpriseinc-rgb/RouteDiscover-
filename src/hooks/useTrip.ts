@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import type { Preferences } from "@/db/schema";
 import { simplifyTo } from "@/lib/geo";
 import type { GeoResult, RouteResult } from "@/lib/types";
 
@@ -8,7 +9,12 @@ export type Trip = {
   origin?: GeoResult;
   destination?: GeoResult;
   radiusMiles: number;
+  radiusTouched?: boolean;
   route?: RouteResult;
+  /** Saved trip currently being planned (stops get added to it). */
+  activeTrip?: { id: string; name: string };
+  /** Signed-in user's preferences, seeded by the app layout. */
+  preferences?: Preferences;
 };
 
 const KEY = "routediscover:trip:v1";
