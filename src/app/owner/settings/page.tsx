@@ -7,6 +7,7 @@ import type { AppSettings } from "@/lib/settings";
 
 export default function OwnerSettingsPage() {
   const c = useOwnerConsole();
+  const [access, setAccess] = useState<AppSettings["access"] | null>(null);
   const [app, setApp] = useState<AppSettings["app"] | null>(null);
   const [pricing, setPricing] = useState<AppSettings["pricing"] | null>(null);
   const [price, setPrice] = useState("4.99");
@@ -23,6 +24,7 @@ export default function OwnerSettingsPage() {
   const [seededFrom, setSeededFrom] = useState<typeof c.state>(null);
   if (c.state && c.state !== seededFrom) {
     setSeededFrom(c.state);
+    setAccess(c.state.draft.access);
     setApp(c.state.draft.app);
     setPricing(c.state.draft.pricing);
     setPrice((c.state.draft.pricing.monthlyPriceCents / 100).toFixed(2));
@@ -36,10 +38,11 @@ export default function OwnerSettingsPage() {
     setSponsorPrice((c.state.draft.business.sponsorPriceCents / 100).toFixed(2));
   }
 
-  if (!app || !pricing || !biz || !ref || !legal) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
+  if (!access || !app || !pricing || !biz || !ref || !legal) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
 
   const save = () =>
     c.save({
+      access,
       app,
       pricing: {
         ...pricing,
@@ -70,6 +73,29 @@ export default function OwnerSettingsPage() {
         <h1 className="text-2xl font-extrabold tracking-tight">Pricing & app</h1>
         <p className="text-sm text-muted">What subscribers pay and what the landing page says. Save as a draft, then go live.</p>
       </div>
+
+      <Section
+        title="Sign-ups"
+        subtitle="Block new accounts until you are ready to launch. Existing users, including you, can still sign in. Save, then go live for the change to take effect."
+        aside={
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input type="checkbox" className="h-4 w-4" checked={access.signupsOpen} onChange={(e) => setAccess({ ...access, signupsOpen: e.target.checked })} />
+            Sign-ups {access.signupsOpen ? "open" : "closed"}
+          </label>
+        }
+      >
+        <div className={`rounded-xl border p-3 text-sm sm:col-span-2 ${access.signupsOpen ? "border-green/40 bg-green/5" : "border-orange/50 bg-cream"}`}>
+          {access.signupsOpen
+            ? "Anyone can create an account. The landing page shows its sign-up buttons."
+            : "New accounts are blocked. The landing page shows the message below instead of sign-up buttons, and /signup explains that sign-ups are closed."}
+        </div>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" className="h-4 w-4" disabled={access.signupsOpen} checked={access.allowInvited} onChange={(e) => setAccess({ ...access, allowInvited: e.target.checked })} />
+          While closed, still allow people who arrive through an invite or referral link
+        </label>
+        <Field label="Headline shown while closed" value={access.closedTitle} onChange={(v) => setAccess({ ...access, closedTitle: v })} />
+        <Field label="Message shown while closed" value={access.closedMessage} onChange={(v) => setAccess({ ...access, closedMessage: v })} wide />
+      </Section>
 
       <Section
         title="Traveler pricing"

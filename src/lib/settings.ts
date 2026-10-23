@@ -18,6 +18,14 @@ export type CustomApi = {
 };
 
 export type AppSettings = {
+  /** Who may create an account. The very first account (the owner) is always allowed. */
+  access: {
+    signupsOpen: boolean;
+    /** While closed, still let people who arrive through an invite or referral link sign up. */
+    allowInvited: boolean;
+    closedTitle: string;
+    closedMessage: string;
+  };
   app: {
     name: string;
     tagline: string;
@@ -115,6 +123,12 @@ export const SECRET_PATHS = [
 ] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  access: {
+    signupsOpen: false,
+    allowInvited: false,
+    closedTitle: "We're almost ready",
+    closedMessage: "RouteDiscover is putting the finishing touches on the app. Sign-ups open soon — check back shortly.",
+  },
   app: {
     name: "RouteDiscover",
     tagline: "Find everything worth stopping for along your drive.",

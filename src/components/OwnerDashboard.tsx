@@ -32,6 +32,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
   const s = stats;
   const r = s.rangeDays;
   const setupItems = [
+    { ok: s.setup.signupsOpen, label: s.setup.signupsOpen ? "Sign-ups open to the public" : "Sign-ups closed (open them when you're ready to launch)", href: "/owner/settings" },
     { ok: s.setup.stripeConnected, label: "Stripe connected", href: "/owner/integrations" },
     { ok: s.setup.priceSynced, label: s.passes.model === "pass" ? "Pass price synced to Stripe" : "Monthly price synced to Stripe", href: "/owner/settings" },
     { ok: s.setup.webhookSecret, label: "Stripe webhook secret saved", href: "/owner/integrations" },

@@ -17,7 +17,7 @@ export type OwnerStats = {
   businesses: { listings: number; claimed: number; claimedInRange: number; basic: number; sponsors: number; revenueCents: number; revenueInRangeCents: number; pendingSubmissions: number; flaggedSubmissions: number; submissionsInRange: number; approvedInRange: number; rejectedInRange: number };
   series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[] };
   recent: Array<{ id: number; type: string; userEmail: string | null; meta: Record<string, unknown>; createdAt: string }>;
-  setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean };
+  setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean; signupsOpen: boolean };
 };
 
 const dayKey = sql<string>`to_char(${schema.events.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`;
@@ -177,6 +177,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
       storeLinks: !!(s.app.appStoreUrl || s.app.playStoreUrl),
       emailConnected: s.integrations.email.provider !== "none" && !!s.integrations.email.apiKey,
       requireSubscription: s.pricing.requireSubscription,
+      signupsOpen: s.access.signupsOpen,
     },
   };
 }

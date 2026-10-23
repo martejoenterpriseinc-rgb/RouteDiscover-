@@ -8,6 +8,7 @@ import { KpiStrip } from "@/components/KpiStrip";
 import { getCurrentUser } from "@/lib/auth";
 import { track } from "@/lib/events";
 import { getPublicStats } from "@/lib/public-stats";
+import { checkSignup } from "@/lib/access";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
@@ -24,6 +25,7 @@ export default async function LandingPage() {
   if (user) redirect("/app");
   const s = await getLiveSettings();
   const stats = await getPublicStats();
+  const open = (await checkSignup(false)).open;
   const anonId = (await cookies()).get("rd_anon")?.value ?? null;
   void track("landing_view", { anonId });
 
@@ -46,7 +48,11 @@ export default async function LandingPage() {
             <a href="#features" className="hidden px-3 text-muted hover:text-foreground md:block">Features</a>
             <a href="#pricing" className="hidden px-3 text-muted hover:text-foreground md:block">Pricing</a>
             <Link href="/login" className="rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
-            <Link href="/signup" className="rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
+            {open ? (
+              <Link href="/signup" className="rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
+            ) : (
+              <span className="rounded-full border border-orange/50 bg-surface px-4 py-1.5 text-orange">Coming soon</span>
+            )}
           </nav>
         </div>
       </header>
@@ -62,9 +68,13 @@ export default async function LandingPage() {
             </h1>
             <p className="mt-4 text-lg text-muted">{s.app.tagline}</p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
-                {s.pricing.trialEnabled && s.pricing.trialDays > 0 ? `Start your ${s.pricing.trialDays}-day free trial` : s.pricing.model === "pass" ? `Get a ${s.pricing.passDays}-day pass` : "Get started"}
-              </Link>
+              {open ? (
+                <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
+                  {s.pricing.trialEnabled && s.pricing.trialDays > 0 ? `Start your ${s.pricing.trialDays}-day free trial` : s.pricing.model === "pass" ? `Get a ${s.pricing.passDays}-day pass` : "Get started"}
+                </Link>
+              ) : (
+                <span className="rounded-xl border border-orange/50 bg-surface px-6 py-3 text-base font-semibold text-orange">{s.access.closedTitle}</span>
+              )}
               <a href="#features" className="rounded-xl border border-border bg-surface px-6 py-3 text-base font-semibold hover:bg-cream">
                 See how it works
               </a>
@@ -129,9 +139,13 @@ export default async function LandingPage() {
             {s.referrals.enabled && s.referrals.referrerBonusCents > 0 && (
               <p className="mt-1 text-sm text-muted">🎁 {s.referrals.promoTitle}: {formatPrice(s.referrals.referrerBonusCents, s.pricing.currency)} credit per friend who pays for {s.referrals.qualifyingPayments} {s.pricing.model === "pass" ? "passes" : "months"}.</p>
             )}
-            <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
-              Create your account
-            </Link>
+            {open ? (
+              <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
+                Create your account
+              </Link>
+            ) : (
+              <p className="mt-6 rounded-xl border border-orange/50 bg-cream px-6 py-3 text-center text-sm font-semibold text-orange">{s.access.closedMessage}</p>
+            )}
             <p className="mt-3 text-center text-xs text-muted">Secure payments by Stripe</p>
           </div>
         </div>

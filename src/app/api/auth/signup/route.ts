@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
+import { checkSignup } from "@/lib/access";
 import { REFERRAL_COOKIE, createSession, createUser, isEmail, setSessionCookie, validatePassword } from "@/lib/auth";
 import { track } from "@/lib/events";
 import { body, fail, handle, json, str } from "@/lib/http";
@@ -23,6 +24,8 @@ export async function POST(req: Request) {
       const inviter = await db.query.users.findFirst({ where: eq(schema.users.referralCode, ref.toUpperCase()) });
       referredBy = inviter?.id ?? null;
     }
+    const gate = await checkSignup(!!referredBy);
+    if (!gate.open) return fail(gate.message || "Sign-ups are closed right now.", 403);
     const user = await createUser({ email, name, password, referredBy });
     if (referredBy) {
       const db = await getDb();
