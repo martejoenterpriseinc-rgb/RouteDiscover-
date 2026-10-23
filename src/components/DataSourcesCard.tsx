@@ -28,11 +28,11 @@ export function DataSourcesCard({ compact = false }: { compact?: boolean }) {
         <h2 className="font-bold">Data sources</h2>
         {!compact && <Link href="/owner/integrations" className="text-xs font-semibold text-blue hover:underline">Integrations →</Link>}
       </div>
-      <dl className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+      <dl className="mt-2 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
         {(Object.keys(u.active) as Array<keyof Usage["active"]>).map((k) => (
-          <div key={k} className="flex justify-between gap-2">
+          <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/60 py-1">
             <dt className="capitalize text-muted">{k}</dt>
-            <dd className="font-semibold">{u.active[k]}</dd>
+            <dd className="text-right font-semibold">{u.active[k]}</dd>
           </div>
         ))}
       </dl>
