@@ -10,6 +10,8 @@ export const CATEGORY_COLORS: Record<CategoryId, string> = {
   attractions: "#1f8ae6",
   outdoors: "#4caf50",
   historic: "#8e44ad",
+  landmarks: "#283593",
+  historic_buildings: "#6d4c41",
   shopping: "#e91e63",
   antiques: "#a0522d",
   entertainment: "#ff6f00",
@@ -50,6 +52,17 @@ export const placeMarker = (p: Place): MapMarker => ({
   label: p.name,
   emoji: CATEGORY_BY_ID[p.category].emoji,
   color: CATEGORY_COLORS[p.category],
+  sub: p.address,
+});
+
+/** A stop the traveller added to the drive. */
+export const stopMarker = (p: Place, n: number): MapMarker => ({
+  id: `stop-${p.id}`,
+  lat: p.lat,
+  lng: p.lng,
+  label: `Stop ${n}: ${p.name}`,
+  emoji: String(n),
+  color: "#1c2b5a",
   sub: p.address,
 });
 

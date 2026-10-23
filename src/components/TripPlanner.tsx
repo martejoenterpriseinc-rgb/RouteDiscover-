@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useTrip } from "@/hooks/useTrip";
 import { fetchRoute } from "@/lib/client";
+import { asGeo } from "@/hooks/useDriveStops";
 import { fmtDuration, fmtMiles } from "@/lib/geo";
 import type { GeoResult } from "@/lib/types";
 import { PlaceInput } from "./PlaceInput";
@@ -39,7 +40,7 @@ export function TripPlanner({ compact = false, onPlanned }: { compact?: boolean;
     setBusy(true);
     setError(null);
     try {
-      const r = await fetchRoute(trip.origin, trip.destination);
+      const r = await fetchRoute(trip.origin, trip.destination, (trip.stops ?? []).map(asGeo));
       update({ route: { ...r.data, source: r.source } });
       setOpen(false);
       onPlanned?.();
@@ -58,7 +59,7 @@ export function TripPlanner({ compact = false, onPlanned }: { compact?: boolean;
             {trip.route.origin.label} → {trip.route.destination.label}
           </div>
           <div className="text-xs text-muted">
-            {fmtMiles(trip.route.distanceMiles)} · {fmtDuration(trip.route.durationMinutes)} · corridor ±{trip.radiusMiles} mi
+            {fmtMiles(trip.route.distanceMiles)} · {fmtDuration(trip.route.durationMinutes)} · corridor ±{trip.radiusMiles} mi{trip.stops?.length ? ` · ${trip.stops.length} ${trip.stops.length === 1 ? "stop" : "stops"}` : ""}
           </div>
         </div>
         <Button variant="secondary" onClick={() => setOpen(true)}>

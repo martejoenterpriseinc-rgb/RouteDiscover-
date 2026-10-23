@@ -14,7 +14,7 @@ import { ALL_NETWORKS } from "@/lib/ev-networks";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
-  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and pick from 40 categories: food and buffets, wineries, attractions, caves, hiking and bike trails, boat launches, hot springs, go-karts and zip lines, golf and mini golf, flea markets, antique malls, travel centers, free and paid camping, spas and B&Bs, and more, sorted by mile marker." },
+  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and tick off any of 38 categories, each with a count of what's along your drive: food and buffets, wineries, attractions, caves, hiking and bike trails, boat launches, hot springs, go-karts and zip lines, golf and mini golf, flea markets, antique malls, travel centers, free and paid camping, spas and B&Bs, and more, sorted by mile marker." },
   { icon: "📍", title: "Destination lookup", text: "Arrive knowing what's around you. Search any radius around your destination by category." },
   { icon: "⚡", title: "EV charging stops on every network", text: "Tesla, Electrify America, EVgo, ChargePoint, Rivian, IONNA and dozens more, filtered by plug, speed and price, with the published rate and fees on each stop and what's walkable while you charge." },
   { icon: "🏨", title: "Hotels and campgrounds with chargers", text: "Sleep where you can plug in. Free vs paid charging, Tesla Destination and Level 2 chargers, RV hookups and guest-only access, all flagged." },

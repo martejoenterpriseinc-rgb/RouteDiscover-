@@ -14,18 +14,20 @@ import { PlaceCard } from "@/components/Cards";
 import { Map } from "@/components/Map";
 import { SplitLayout } from "@/components/SplitLayout";
 import { TripPlanner } from "@/components/TripPlanner";
-import { Button, CategoryChips, Empty, ErrorNote, SourceBanner } from "@/components/ui";
+import { Button, CategoryChecklist, Empty, ErrorNote, SourceBanner } from "@/components/ui";
+import { DriveStopsPanel, StopToggle } from "@/components/DriveStops";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSearch } from "@/hooks/useSearch";
 import { useTrailOverlay } from "@/hooks/useTrailOverlay";
 import { useTrip } from "@/hooks/useTrip";
-import { DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
+import { ALL_CATEGORY_IDS, CATEGORIES, DEFAULT_ROUTE_CATEGORIES } from "@/lib/categories";
 import { fetchPlaces } from "@/lib/client";
 import { distanceToRoute, indexRoute } from "@/lib/geo";
-import { placeMarker } from "@/lib/markers";
+import { placeMarker, stopMarker } from "@/lib/markers";
 import type { CategoryId, Place } from "@/lib/types";
 
 const NO_PLACES: Place[] = [];
+const NO_STOPS: Place[] = [];
 
 function RoutePageInner() {
   const { trip, update } = useTrip();
@@ -75,13 +77,21 @@ function RoutePageInner() {
   const routeLink = route
     ? `/app?o=${route.origin.lat.toFixed(5)},${route.origin.lng.toFixed(5)}&d=${route.destination.lat.toFixed(5)},${route.destination.lng.toFixed(5)}&r=${trip.radiusMiles}&ol=${encodeURIComponent(route.origin.label)}&dl=${encodeURIComponent(route.destination.label)}`
     : null;
-  const searchKey = route && categories.length ? `${routeKey}|${trip.radiusMiles}|${categories.join(",")}` : "";
+  // One search for every category along the corridor; the checklist then filters instantly
+  // and shows how many of each kind were found. Stops added to the drive don't re-run it.
+  // (The key leaves out the geometry, so re-planning through stops keeps the same results.)
+  const searchKey = route ? `${routeKey}|${trip.radiusMiles}` : "";
 
   const search = useSearch(
     searchKey,
-    () => fetchPlaces({ route: route!.geometry, radiusMiles: trip.radiusMiles }, categories),
+    () => fetchPlaces({ route: route!.geometry, radiusMiles: trip.radiusMiles }, ALL_CATEGORY_IDS),
     NO_PLACES,
   );
+  const counts = useMemo(() => {
+    const out: Partial<Record<CategoryId, number>> = {};
+    for (const p of search.data) out[p.category] = (out[p.category] ?? 0) + 1;
+    return out;
+  }, [search.data]);
 
   const myMile = useMemo(() => {
     if (!route || !geo.position) return null;
@@ -90,12 +100,14 @@ function RoutePageInner() {
   }, [route, geo.position]);
 
   const visible = useMemo(() => {
-    if (!aheadOnly || myMile == null) return search.data;
-    return search.data.filter((p) => (p.alongMiles ?? 0) >= myMile - 1);
-  }, [search.data, aheadOnly, myMile]);
+    const picked = search.data.filter((p) => categories.includes(p.category));
+    if (!aheadOnly || myMile == null) return picked;
+    return picked.filter((p) => (p.alongMiles ?? 0) >= myMile - 1);
+  }, [search.data, categories, aheadOnly, myMile]);
 
+  const stops = trip.stops ?? NO_STOPS;
   const trailLines = useTrailOverlay(visible.find((p) => p.id === selected));
-  const markers = useMemo(() => visible.map(placeMarker), [visible]);
+  const markers = useMemo(() => [...visible.filter((p) => !stops.some((s) => s.id === p.id)).map(placeMarker), ...stops.map((s, i) => stopMarker(s, i + 1))], [visible, stops]);
 
   const controls = (
     <>
@@ -116,6 +128,7 @@ function RoutePageInner() {
       )}
       <ActiveTripBanner />
       <TripPlanner compact />
+      {route && <DriveStopsPanel />}
       {route && !trip.activeTrip && (
         <Link href="/app/trips/new" className="text-center text-sm font-semibold text-blue hover:underline">
           🗓️ Save this route as a trip
@@ -123,9 +136,10 @@ function RoutePageInner() {
       )}
       {route && routeLink && <SendToPhone path={routeLink} title={`${route.origin.label} → ${route.destination.label}`} compact />}
       {route && (
-        <Disclosure id="route-filters" title="Filters" summary={`${categories.length} categories${aheadOnly ? " · ahead of me" : ""}`} className="rounded-xl border border-border bg-surface p-3" bodyClassName="mt-2 flex flex-col gap-2">
+        <Disclosure id="route-filters" title="What to look for" summary={`${categories.length} of ${CATEGORIES.length} categories · ${visible.length} stops${aheadOnly ? " · ahead of me" : ""}`} className="rounded-xl border border-border bg-surface p-3" bodyClassName="mt-2 flex flex-col gap-2">
           <SourceBanner source={search.source} notice={search.notice} />
-          <CategoryChips value={categories} onChange={setCategories} />
+          <p className="text-xs text-muted">Tick the kinds of places you want. The number shows how many of each are within {trip.radiusMiles} mi of this drive.</p>
+          <CategoryChecklist value={categories} onChange={setCategories} counts={search.done && !search.error ? counts : undefined} countsLabel="along the route" />
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <Button
               variant={aheadOnly ? "primary" : "secondary"}
@@ -152,7 +166,7 @@ function RoutePageInner() {
       id="route-results"
       title={search.loading ? "Searching along your route…" : `${visible.length} stops within ${trip.radiusMiles} mi`}
       summary="Results hidden"
-      aside={<span className="text-xs text-muted">sorted by mile marker</span>}
+      aside={<span className="text-xs text-muted">by mile · tick a box to add it to the drive</span>}
       bodyClassName="mt-2 flex flex-col gap-3"
     >
       {search.error && <ErrorNote>{search.error}</ErrorNote>}
@@ -162,7 +176,7 @@ function RoutePageInner() {
       )}
       <ul className="flex flex-col gap-2">
         {visible.map((p) => (
-          <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<AddToTripButton place={p} />} />
+          <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<span className="flex flex-wrap items-center justify-end gap-1"><StopToggle place={p} /><AddToTripButton place={p} /></span>} />
         ))}
       </ul>
     </Disclosure>

@@ -9,7 +9,10 @@ test("categorize maps OSM tags to app categories", () => {
   assert.equal(categorize({ tourism: "hotel" }), "lodging");
   assert.equal(categorize({ shop: "antiques" }), "antiques");
   assert.equal(categorize({ amenity: "charging_station" }), "ev");
-  assert.equal(categorize({ historic: "memorial", tourism: "attraction" }), "historic");
+  assert.equal(categorize({ historic: "memorial", tourism: "attraction" }), "landmarks");
+  assert.equal(categorize({ historic: "battlefield" }), "historic");
+  assert.equal(categorize({ historic: "castle", name: "Fonthill" }), "historic_buildings");
+  assert.equal(categorize({ man_made: "lighthouse" }), "landmarks");
   assert.equal(categorize({ building: "yes" }), null);
   assert.equal(categorize({ amenity: "fuel", brand: "Buc-ee's" }), "travel");
   assert.equal(categorize({ amenity: "fuel", name: "Love's Travel Stop" }), "travel");

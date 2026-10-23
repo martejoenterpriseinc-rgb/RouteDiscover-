@@ -11,6 +11,8 @@ export type CategoryId =
   | "attractions"
   | "outdoors"
   | "historic"
+  | "landmarks"
+  | "historic_buildings"
   | "shopping"
   | "antiques"
   | "entertainment"
@@ -72,6 +74,8 @@ export type RouteResult = {
   durationMinutes: number;
   origin: GeoResult;
   destination: GeoResult;
+  /** Stops the route was planned through, in travel order. */
+  via?: GeoResult[];
 };
 
 export type Place = {

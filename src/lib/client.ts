@@ -22,8 +22,8 @@ export async function geocodeClient(q: string): Promise<ApiEnvelope<GeoResult[]>
   return json as ApiEnvelope<GeoResult[]>;
 }
 
-export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | string) =>
-  post<RouteResult>("/api/route", { origin, destination });
+export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | string, via: GeoResult[] = []) =>
+  post<RouteResult>("/api/route", { origin, destination, via });
 
 export const fetchPlaces = (area: Area, categories: CategoryId[]) =>
   post<Place[]>("/api/places", { ...area, categories });

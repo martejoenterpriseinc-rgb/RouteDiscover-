@@ -136,6 +136,16 @@ export type DemoPlace = {
 
 export const DEMO_PLACES: DemoPlace[] = [
   // Illinois
+  { name: "Lincoln Tomb State Historic Site", category: "landmarks", lat: 39.8236, lng: -89.6563, address: "Springfield, IL", openingHours: "Mo-Su 09:00-17:00" },
+  { name: "Old State Capitol", category: "historic_buildings", lat: 39.8006, lng: -89.6479, address: "Springfield, IL", openingHours: "Tu-Sa 09:00-17:00" },
+  { name: "Cloud Gate (The Bean)", category: "landmarks", lat: 41.8827, lng: -87.6233, address: "Chicago, IL", openingHours: "24/7" },
+  { name: "Soldiers' and Sailors' Monument", category: "landmarks", lat: 39.7685, lng: -86.1580, address: "Indianapolis, IN", openingHours: "Fr-Su 10:30-17:30" },
+  { name: "Marblehead Lighthouse", category: "landmarks", lat: 41.5366, lng: -82.7117, address: "Marblehead, OH", openingHours: "Mo-Su 09:00-17:00" },
+  { name: "Stan Hywet Hall & Gardens", category: "historic_buildings", lat: 41.1310, lng: -81.5520, address: "Akron, OH", openingHours: "Tu-Su 10:00-16:30" },
+  { name: "Pennsylvania Memorial (Gettysburg)", category: "landmarks", lat: 39.8060, lng: -77.2350, address: "Gettysburg, PA", openingHours: "Mo-Su 06:00-19:00" },
+  { name: "Ephrata Cloister", category: "historic_buildings", lat: 40.1800, lng: -76.1810, address: "Ephrata, PA", openingHours: "We-Sa 09:00-17:00; Su 12:00-17:00" },
+  { name: "Rock Ford Plantation", category: "historic_buildings", lat: 40.0210, lng: -76.2920, address: "Lancaster, PA", openingHours: "We-Sa 10:00-16:00; Su 12:00-16:00" },
+  { name: "Lancaster County Courthouse (Old)", category: "historic_buildings", lat: 40.0386, lng: -76.3040, address: "Lancaster, PA" },
   { name: "Abraham Lincoln Presidential Museum", category: "historic", lat: 39.8027, lng: -89.6457, address: "Springfield, IL" },
   { name: "Lincoln Home National Historic Site", category: "historic", lat: 39.7976, lng: -89.6446, address: "Springfield, IL" },
   { name: "Cozy Dog Drive In", category: "food", lat: 39.7627, lng: -89.6528, address: "Springfield, IL", openingHours: "Mo-Sa 08:00-20:00" },

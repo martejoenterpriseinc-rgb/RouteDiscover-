@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES, CATEGORY_GROUPS } from "@/lib/categories";
+import { CATEGORIES, CATEGORIES_AZ, CATEGORY_GROUPS } from "@/lib/categories";
 import type { Category, CategoryId, DataSource } from "@/lib/types";
 
 export function RadiusSlider({
@@ -115,6 +115,82 @@ function CategoryGroup({ group, members, selected, chip, onAll, onNone }: { grou
         <button type="button" className="text-[11px] font-semibold text-muted hover:underline" onClick={onNone}>none</button>
       </div>
       {open && <div className="hide-scrollbar flex gap-2 overflow-x-auto px-2 pb-2 md:flex-wrap">{members.map(chip)}</div>}
+    </div>
+  );
+}
+
+/**
+ * Alphabetical checkbox list of every category, like a shopping list: tick what you want,
+ * and when `counts` is given each row shows how many were found (along the route, around
+ * the destination, near you). Stays compact with a filter box and a scrolling two-column list.
+ */
+export function CategoryChecklist({
+  value,
+  onChange,
+  counts,
+  countsLabel = "found",
+}: {
+  value: CategoryId[];
+  onChange: (v: CategoryId[]) => void;
+  /** Places found per category; omit while the search is still running. */
+  counts?: Partial<Record<CategoryId, number>>;
+  countsLabel?: string;
+}) {
+  const [q, setQ] = useState("");
+  const [foundOnly, setFoundOnly] = useState(false);
+  const needle = q.trim().toLowerCase();
+  const rows = CATEGORIES_AZ.filter((c) => (!needle || c.label.toLowerCase().includes(needle) || (c.hint ?? "").toLowerCase().includes(needle)) && (!foundOnly || !counts || (counts[c.id] ?? 0) > 0));
+  const toggle = (id: CategoryId) => onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+  const total = counts ? Object.values(counts).reduce((s, n) => s + (n ?? 0), 0) : null;
+  return (
+    <div className="flex flex-col gap-2" role="group" aria-label="Categories">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+        <span>
+          <strong className="text-foreground">{value.length}</strong> of {CATEGORIES.length} selected
+          {total != null && <> · <strong className="text-foreground">{total}</strong> {countsLabel}</>}
+        </span>
+        <span className="flex gap-3">
+          <button type="button" className="font-semibold text-blue hover:underline" onClick={() => onChange(rows.map((c) => c.id))}>All</button>
+          <button type="button" className="font-semibold text-blue hover:underline" onClick={() => onChange([])}>None</button>
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Find a category…"
+          aria-label="Find a category"
+          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-sm outline-none ring-blue/40 focus:ring-2"
+        />
+        {counts && (
+          <label className="flex shrink-0 items-center gap-1 text-xs text-muted">
+            <input type="checkbox" className="h-3.5 w-3.5" checked={foundOnly} onChange={(e) => setFoundOnly(e.target.checked)} />
+            Only {countsLabel}
+          </label>
+        )}
+      </div>
+      <ul className="hide-scrollbar @container grid max-h-72 grid-cols-1 gap-x-3 overflow-y-auto rounded-lg border border-border bg-background/60 p-1 @xl:grid-cols-2">
+        {rows.length === 0 && <li className="px-2 py-2 text-xs text-muted">No category matches.</li>}
+        {rows.map((c) => {
+          const on = value.includes(c.id);
+          const n = counts ? counts[c.id] ?? 0 : null;
+          return (
+            <li key={c.id}>
+              <label title={c.hint ?? c.label} className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm transition hover:bg-cream dark:hover:bg-surface ${on ? "font-semibold" : ""}`}>
+                <input type="checkbox" className="h-4 w-4 shrink-0 accent-[#1f8ae6]" checked={on} onChange={() => toggle(c.id)} />
+                <span aria-hidden className="shrink-0">{c.emoji}</span>
+                <span className="min-w-0 flex-1 truncate">{c.label}</span>
+                {n != null && (
+                  <span className={`shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums ${n > 0 ? "bg-blue/15 text-blue" : "bg-border text-muted"}`} aria-label={`${n} ${countsLabel}`}>
+                    {n}
+                  </span>
+                )}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

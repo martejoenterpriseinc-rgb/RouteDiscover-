@@ -18,7 +18,9 @@ export const GOOGLE_TYPES: Record<CategoryId, string[]> = {
   coffee: ["cafe", "coffee_shop"],
   attractions: ["tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "visitor_center"],
   outdoors: ["park", "national_park", "state_park", "garden", "beach"],
-  historic: ["historical_landmark", "historical_place", "monument"],
+  historic: ["historical_place"],
+  landmarks: ["historical_landmark", "monument", "cultural_landmark"],
+  historic_buildings: ["historical_place"],
   souvenirs: ["gift_shop"],
   specialty: ["candy_store", "chocolate_shop", "cheese_shop", "deli", "wine_store", "liquor_store", "tea_house", "toy_store", "hobby_store", "art_studio", "butcher_shop", "farm"],
   shopping: ["shopping_mall", "department_store", "book_store", "clothing_store", "market"],
@@ -59,7 +61,7 @@ export const KNOWN_GOOGLE_TYPES = new Set([
   "restaurant", "meal_takeaway", "bakery", "ice_cream_shop", "sandwich_shop", "pizza_restaurant", "diner", "buffet_restaurant", "cafe", "coffee_shop", "bar", "wine_bar", "pub", "tea_house", "deli",
   "tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "amusement_park", "amusement_center", "visitor_center", "water_park", "adventure_sports_center", "event_venue", "movie_theater", "performing_arts_theater", "casino", "bowling_alley", "playground", "childrens_camp",
   "park", "national_park", "state_park", "hiking_area", "garden", "beach", "cycling_park", "off_roading_area", "marina", "golf_course", "miniature_golf_course", "campground", "rv_park",
-  "historical_landmark", "historical_place", "monument",
+  "historical_landmark", "historical_place", "monument", "cultural_landmark",
   "shopping_mall", "department_store", "gift_shop", "book_store", "clothing_store", "market", "antique_store", "thrift_store", "candy_store", "liquor_store", "butcher_shop", "art_studio",
   "hotel", "motel", "lodging", "resort_hotel", "bed_and_breakfast", "guest_house", "inn", "spa", "massage", "sauna", "wellness_center",
   "gas_station", "truck_stop", "electric_vehicle_charging_station", "rest_stop", "public_bathroom", "supermarket", "grocery_store", "pharmacy", "convenience_store",
@@ -213,7 +215,9 @@ export async function googlePlaces(cfg: GoogleConfig, search: { kind: "point"; c
   if (search.kind === "point") {
     add(await nearby(cfg.serverKey, search.center, search.radiusMiles * 1609.344, types));
   } else {
-    const { points, radiusMiles } = samplePoints(search.route, search.radiusMiles, cfg.maxRequestsPerSearch);
+    // Each sample point costs one request per 50 types, so share the budget across both.
+    const chunks = Math.max(1, Math.ceil(types.length / 50));
+    const { points, radiusMiles } = samplePoints(search.route, search.radiusMiles, Math.max(1, Math.floor(cfg.maxRequestsPerSearch / chunks)));
     const results = await Promise.all(points.map((pt) => nearby(cfg.serverKey, pt, radiusMiles * 1609.344, types).catch(() => [] as Place[])));
     results.forEach(add);
     if (seen.size === 0 && results.every((r) => r.length === 0)) throw new Error("Google Places returned nothing for this corridor");
@@ -259,7 +263,7 @@ export async function googleGeocode(cfg: GoogleConfig, q: string, limit: number)
   return (json.results ?? []).slice(0, limit).map((r) => ({ label: r.formatted_address.replace(/, USA$/, ""), lat: r.geometry.location.lat, lng: r.geometry.location.lng }));
 }
 
-export async function googleRoute(cfg: GoogleConfig, origin: GeoResult, destination: GeoResult): Promise<Omit<RouteResult, "source">> {
+export async function googleRoute(cfg: GoogleConfig, origin: GeoResult, destination: GeoResult, via: GeoResult[] = []): Promise<Omit<RouteResult, "source">> {
   if (!cfg.routing) throw new Error("Google Routes not enabled");
   await consume("google", "routes", cfg.caps.routes);
   const json = await google<{ routes?: Array<{ distanceMeters: number; duration: string; polyline: { encodedPolyline: string } }> }>("https://routes.googleapis.com/directions/v2:computeRoutes", cfg.serverKey, {
@@ -268,6 +272,7 @@ export async function googleRoute(cfg: GoogleConfig, origin: GeoResult, destinat
     body: JSON.stringify({
       origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
       destination: { location: { latLng: { latitude: destination.lat, longitude: destination.lng } } },
+      ...(via.length ? { intermediates: via.map((p) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } })) } : {}),
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_UNAWARE",
       polylineQuality: "HIGH_QUALITY",
@@ -279,7 +284,7 @@ export async function googleRoute(cfg: GoogleConfig, origin: GeoResult, destinat
   if (geometry.length < 2) throw new Error("Google route had no geometry");
   const distanceMiles = r.distanceMeters / 1609.344;
   const seconds = Number(String(r.duration).replace(/s$/, "")) || (distanceMiles / 62) * 3600;
-  return { geometry, distanceMiles, durationMinutes: seconds / 60, origin, destination };
+  return { geometry, distanceMiles, durationMinutes: seconds / 60, origin, destination, via };
 }
 
 export const milesBetween = haversineMiles;

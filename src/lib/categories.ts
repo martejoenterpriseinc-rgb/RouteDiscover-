@@ -49,10 +49,27 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: "historic",
-    label: "Historic",
+    label: "Historic Sites",
     emoji: "🏛️",
     group: "fun",
+    hint: "Battlefields, historic districts, archaeological sites and other places with a story",
     osm: [`["historic"]["name"]`],
+  },
+  {
+    id: "landmarks",
+    label: "Landmarks & Monuments",
+    emoji: "🗽",
+    group: "fun",
+    hint: "Monuments, memorials, statues, lighthouses, towers and the famous things worth a photo",
+    osm: [`["historic"~"^(monument|memorial|statue|wayside_cross|boundary_stone)$"]["name"]`, `["man_made"~"^(lighthouse|tower|obelisk)$"]["name"]`, `["tourism"="attraction"]["landmark"]`],
+  },
+  {
+    id: "historic_buildings",
+    label: "Historic Buildings",
+    emoji: "🏰",
+    group: "fun",
+    hint: "Castles, mansions, courthouses, mills, forts, old churches and heritage architecture",
+    osm: [`["historic"~"^(building|castle|manor|fort|house|mansion|courthouse|mill|farm|church|city_gate|tower|hotel|railway_station|lighthouse)$"]["name"]`, `["heritage"]["building"]["name"]`],
   },
   {
     id: "shopping",
@@ -303,6 +320,10 @@ export const DEFAULT_ROUTE_CATEGORIES: CategoryId[] = [
   "historic",
 ];
 
+/** Every category id, A→Z by label, for checklists. */
+export const CATEGORIES_AZ: Category[] = [...CATEGORIES].sort((a, b) => a.label.localeCompare(b.label));
+export const ALL_CATEGORY_IDS: CategoryId[] = CATEGORIES.map((c) => c.id);
+
 export const WALKABLE_CATEGORIES: CategoryId[] = CATEGORIES.filter((c) => c.walkable).map(
   (c) => c.id,
 );
@@ -370,6 +391,10 @@ export function categorize(tags: Record<string, string>): CategoryId | null {
     return "specialty";
   if (["mall", "department_store", "outlet", "books", "clothes", "farm"].includes(t.shop ?? ""))
     return "shopping";
+  if (["monument", "memorial", "statue", "wayside_cross", "boundary_stone"].includes(t.historic ?? "") || ["lighthouse", "obelisk"].includes(t.man_made ?? "") || (t.man_made === "tower" && t.tourism === "attraction"))
+    return "landmarks";
+  if (["building", "castle", "manor", "fort", "house", "mansion", "courthouse", "mill", "farm", "church", "city_gate", "tower", "hotel", "railway_station"].includes(t.historic ?? "") || (t.heritage && t.building))
+    return "historic_buildings";
   if (t.historic) return "historic";
   if (["park", "nature_reserve", "garden"].includes(t.leisure ?? "") || t.boundary === "national_park" || ["beach", "waterfall", "peak"].includes(t.natural ?? ""))
     return "outdoors";

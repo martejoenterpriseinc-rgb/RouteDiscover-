@@ -30,7 +30,7 @@ function buildOverpassQuery(search: PlaceSearch): string {
           .join(",")})`;
   const selectors = search.categories.flatMap((id) => CATEGORY_BY_ID[id].osm);
   const body = selectors.map((sel) => `nwr${sel}["name"]${around};`).join("\n");
-  const limit = search.limit ?? 400;
+  const limit = search.limit ?? (search.categories.length > 8 ? 1200 : 400);
   return `[out:json][timeout:40];(\n${body}\n);out center tags ${limit};`;
 }
 

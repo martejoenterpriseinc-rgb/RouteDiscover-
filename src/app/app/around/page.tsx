@@ -6,11 +6,13 @@ import { PlaceCard } from "@/components/Cards";
 import { Disclosure } from "@/components/Disclosure";
 import { Map } from "@/components/Map";
 import { SplitLayout } from "@/components/SplitLayout";
-import { Button, CategoryChips, Empty, ErrorNote, RadiusSlider, Segmented, SourceBanner } from "@/components/ui";
+import { Button, CategoryChecklist, Empty, ErrorNote, RadiusSlider, Segmented, SourceBanner } from "@/components/ui";
+import { StopToggle } from "@/components/DriveStops";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSearch } from "@/hooks/useSearch";
 import { useTrailOverlay } from "@/hooks/useTrailOverlay";
 import { useTrip } from "@/hooks/useTrip";
+import { ALL_CATEGORY_IDS } from "@/lib/categories";
 import { fetchPlaces } from "@/lib/client";
 import { haversineMiles } from "@/lib/geo";
 import { placeMarker } from "@/lib/markers";
@@ -31,22 +33,30 @@ export default function AroundMePage() {
   const [anchor, setAnchor] = useState<LatLng | null>(null);
 
   // Start from the traveller's saved categories; they can change them here.
-  const cats = categories ?? trip.preferences?.categories ?? ["attractions", "food", "outdoors", "historic"];
+  const prefCats = trip.preferences?.categories;
+  const cats = useMemo<CategoryId[]>(() => categories ?? prefCats ?? ["attractions", "food", "outdoors", "historic"], [categories, prefCats]);
 
   // Follow mode: move the search anchor once the device has travelled far enough (derived during render).
   const pos = geo.position;
   if (pos && (!anchor || haversineMiles(anchor, pos) >= REFRESH_MILES)) setAnchor(pos);
 
-  const key = anchor ? `${anchor.lat.toFixed(3)},${anchor.lng.toFixed(3)}|${radius}|${cats.join(",")}` : "";
-  const search = useSearch(key, () => fetchPlaces({ center: anchor!, radiusMiles: radius }, cats), NO_PLACES);
+  // Every category is fetched once per anchor; the checklist filters instantly and shows counts.
+  const key = anchor ? `${anchor.lat.toFixed(3)},${anchor.lng.toFixed(3)}|${radius}` : "";
+  const search = useSearch(key, () => fetchPlaces({ center: anchor!, radiusMiles: radius }, ALL_CATEGORY_IDS), NO_PLACES);
+  const counts = useMemo(() => {
+    const out: Partial<Record<CategoryId, number>> = {};
+    for (const p of search.data) out[p.category] = (out[p.category] ?? 0) + 1;
+    return out;
+  }, [search.data]);
+  const picked = useMemo(() => search.data.filter((p) => cats.includes(p.category)), [search.data, cats]);
 
   const visible = useMemo(() => {
-    let list = search.data;
+    let list = picked;
     if (openOnly === "open") list = list.filter((p) => p.hours?.openNow === true);
     if (sort === "rating") list = [...list].sort((a, b) => (b.google?.rating ?? 0) - (a.google?.rating ?? 0) || (a.distanceMiles ?? 0) - (b.distanceMiles ?? 0));
     return list;
-  }, [search.data, openOnly, sort]);
-  const openCount = search.data.filter((p) => p.hours?.openNow === true).length;
+  }, [picked, openOnly, sort]);
+  const openCount = picked.filter((p) => p.hours?.openNow === true).length;
   const trailLines = useTrailOverlay(visible.find((p) => p.id === selected));
   const markers = useMemo(() => visible.map(placeMarker), [visible]);
 
@@ -79,7 +89,7 @@ export default function AroundMePage() {
         </div>
       )}
       <Disclosure id="around-categories" title="What are you in the mood for?" size="sm" summary={`${cats.length} categories`} className="rounded-xl border border-border bg-surface p-3" bodyClassName="mt-2">
-        <CategoryChips value={cats} onChange={setCategories} />
+        <CategoryChecklist value={cats} onChange={setCategories} counts={search.done && !search.error ? counts : undefined} countsLabel="near you" />
         {trip.preferences && categories && (
           <button type="button" className="mt-2 text-xs font-semibold text-blue hover:underline" onClick={() => setCategories(null)}>Back to my saved categories</button>
         )}
@@ -105,7 +115,7 @@ export default function AroundMePage() {
       )}
       <ul className="flex flex-col gap-2">
         {visible.map((p) => (
-          <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<AddToTripButton place={p} />} />
+          <PlaceCard key={p.id} place={p} selected={selected === p.id} onClick={() => setSelected(p.id)} action={<span className="flex flex-wrap items-center justify-end gap-1"><StopToggle place={p} /><AddToTripButton place={p} /></span>} />
         ))}
       </ul>
     </Disclosure>
