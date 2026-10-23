@@ -85,7 +85,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
   const mrrCents = paying * s.pricing.monthlyPriceCents;
   const canceled30 = await eventCount("subscription_canceled", since30);
   const churnRatePct = paying + trialing + canceled30 > 0 ? Math.round((canceled30 / (paying + trialing + canceled30)) * 1000) / 10 : 0;
-  const everSubscribed = latest.size;
+  const everSubscribed = new Set(subs.filter((r) => r.kind !== "trial").map((r) => r.userId)).size;
   const conversionPct = usersTotal > 0 ? Math.round((everSubscribed / usersTotal) * 1000) / 10 : 0;
 
   // Acquisition

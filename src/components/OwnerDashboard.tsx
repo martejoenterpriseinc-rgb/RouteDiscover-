@@ -32,7 +32,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
   const r = s.rangeDays;
   const setupItems = [
     { ok: s.setup.stripeConnected, label: "Stripe connected", href: "/owner/integrations" },
-    { ok: s.setup.priceSynced, label: "Monthly price synced to Stripe", href: "/owner/settings" },
+    { ok: s.setup.priceSynced, label: s.passes.model === "pass" ? "Pass price synced to Stripe" : "Monthly price synced to Stripe", href: "/owner/settings" },
     { ok: s.setup.webhookSecret, label: "Stripe webhook secret saved", href: "/owner/integrations" },
     { ok: s.setup.storeLinks, label: "App Store / Google Play links", href: "/owner/settings" },
     { ok: s.setup.emailConnected, label: "Email provider for invites", href: "/owner/integrations" },
@@ -73,7 +73,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
           )}
           <StatTile label={s.passes.model === "pass" ? "Active passes" : "Active subscribers"} value={s.subscriptions.active} sub={`${s.subscriptions.trialing} on free trial · ${s.subscriptions.pastDue} past due`} />
           <StatTile label="Canceled" value={s.subscriptions.canceled} sub={`${s.subscriptions.cancelingAtPeriodEnd} set to cancel at period end`} />
-          <StatTile label="Churn (30 days)" value={`${s.subscriptions.churnRatePct}%`} sub={`${s.subscriptions.conversionPct}% of accounts have ever subscribed`} />
+          <StatTile label="Churn (30 days)" value={`${s.subscriptions.churnRatePct}%`} sub={`${s.subscriptions.conversionPct}% of accounts have ever paid`} />
         </div>
       </section>
 
