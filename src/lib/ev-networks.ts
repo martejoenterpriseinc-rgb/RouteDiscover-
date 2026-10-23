@@ -22,7 +22,7 @@ export type ChargerPricing = {
   raw?: string;
 };
 
-export type Network = { id: string; label: string; short?: string; color: string; match: RegExp };
+export type Network = { id: string; label: string; short?: string; color: string; match: RegExp; /** "network": runs its own chargers. "host": a gas station, travel center or retailer that hosts them. */ kind?: "network" | "host" };
 
 /** Every network we know how to recognise. Order matters: more specific patterns first. */
 export const NETWORKS: Network[] = [
@@ -43,13 +43,13 @@ export const NETWORKS: Network[] = [
   { id: "semaconnect", label: "SemaConnect", color: "#0b6aa2", match: /sema\s*connect/i },
   { id: "evconnect", label: "EV Connect", color: "#1b75bb", match: /ev\s*connect/i },
   { id: "enel_x", label: "Enel X Way", short: "Enel X", color: "#1a5ba6", match: /enel|juice\s*box/i },
-  { id: "circle_k", label: "Circle K Charge", short: "Circle K", color: "#e3001b", match: /circle\s*k/i },
-  { id: "pilot_flyingj", label: "Pilot / Flying J (GM Energy)", short: "Pilot/FJ", color: "#cc0000", match: /pilot|flying\s*j|gm\s*energy/i },
-  { id: "walmart", label: "Walmart", color: "#0071ce", match: /walmart|sam.?s club/i },
-  { id: "seven_charge", label: "7Charge (7-Eleven)", short: "7Charge", color: "#f58220", match: /7\s*-?\s*eleven|7charge/i },
-  { id: "wawa", label: "Wawa", color: "#b31b1b", match: /\bwawa\b/i },
-  { id: "sheetz", label: "Sheetz", color: "#d7282f", match: /sheetz/i },
-  { id: "buc_ees", label: "Buc-ee's", color: "#e4002b", match: /buc-?ee/i },
+  { id: "circle_k", label: "Circle K Charge", short: "Circle K", color: "#e3001b", match: /circle\s*k/i, kind: "host" },
+  { id: "pilot_flyingj", label: "Pilot / Flying J (GM Energy)", short: "Pilot/FJ", color: "#cc0000", match: /pilot|flying\s*j|gm\s*energy/i, kind: "host" },
+  { id: "walmart", label: "Walmart", color: "#0071ce", match: /walmart|sam.?s club/i, kind: "host" },
+  { id: "seven_charge", label: "7Charge (7-Eleven)", short: "7Charge", color: "#f58220", match: /7\s*-?\s*eleven|7charge/i, kind: "host" },
+  { id: "wawa", label: "Wawa", color: "#b31b1b", match: /\bwawa\b/i, kind: "host" },
+  { id: "sheetz", label: "Sheetz", color: "#d7282f", match: /sheetz/i, kind: "host" },
+  { id: "buc_ees", label: "Buc-ee's", color: "#e4002b", match: /buc-?ee/i, kind: "host" },
   { id: "red_e", label: "Red E", color: "#d62828", match: /\bred\s*e\b/i },
   { id: "evolve_ny", label: "EVolve NY", color: "#0f4c81", match: /evolve/i },
   { id: "petro_canada", label: "Petro-Canada", color: "#c8102e", match: /petro-?\s*canada/i },
@@ -73,6 +73,45 @@ export const NETWORKS: Network[] = [
   { id: "utility", label: "Utility-run", short: "Utility", color: "#6c757d", match: /electric\s*(co-?op|cooperative|company)|\butility\b|power company|energy$/i },
 ];
 
+/** Gas stations, travel centers and retailers that host chargers under their own name. */
+export const HOSTS: Network[] = [
+  { id: "loves", label: "Love's Travel Stops", short: "Love's", color: "#e4002b", match: /love'?s/i, kind: "host" },
+  { id: "caseys", label: "Casey's", color: "#c8102e", match: /casey'?s/i, kind: "host" },
+  { id: "kwik_trip", label: "Kwik Trip / Kwik Star", short: "Kwik Trip", color: "#d41f2d", match: /kwik\s*(trip|star)/i, kind: "host" },
+  { id: "quiktrip", label: "QuikTrip", color: "#c8102e", match: /quik\s*trip|\bqt\b/i, kind: "host" },
+  { id: "racetrac", label: "RaceTrac", color: "#e31837", match: /race\s*trac/i, kind: "host" },
+  { id: "maverik", label: "Maverik", color: "#b22222", match: /maverik/i, kind: "host" },
+  { id: "ta_petro", label: "TA / Petro Travel Centers", short: "TA / Petro", color: "#003da5", match: /travelcenters|\bta\s*travel|petro\s*stopping|\bta\b.*petro/i, kind: "host" },
+  { id: "royal_farms", label: "Royal Farms", color: "#0054a6", match: /royal\s*farms/i, kind: "host" },
+  { id: "cumberland", label: "Cumberland Farms", short: "Cumberland", color: "#1f6f3f", match: /cumberland\s*farms/i, kind: "host" },
+  { id: "kum_go", label: "Kum & Go", color: "#d22630", match: /kum\s*&\s*go/i, kind: "host" },
+  { id: "stewarts", label: "Stewart's Shops", short: "Stewart's", color: "#c41230", match: /stewart'?s/i, kind: "host" },
+  { id: "speedway", label: "Speedway", color: "#cc0000", match: /speedway(?!\s*museum)/i, kind: "host" },
+  { id: "getgo", label: "GetGo", color: "#0067b1", match: /get\s*go/i, kind: "host" },
+  { id: "rutters", label: "Rutter's", color: "#1f4e9c", match: /rutter'?s/i, kind: "host" },
+  { id: "turkey_hill", label: "Turkey Hill", color: "#1b6b3a", match: /turkey\s*hill/i, kind: "host" },
+  { id: "thorntons", label: "Thorntons", color: "#005daa", match: /thorntons/i, kind: "host" },
+  { id: "holiday", label: "Holiday Stationstores", short: "Holiday", color: "#e2231a", match: /holiday\s*station/i, kind: "host" },
+  { id: "chevron", label: "Chevron / Texaco", short: "Chevron", color: "#0054a4", match: /chevron|texaco/i, kind: "host" },
+  { id: "exxon", label: "Exxon / Mobil", short: "Exxon", color: "#d1232a", match: /exxon|mobil\b/i, kind: "host" },
+  { id: "sunoco", label: "Sunoco", color: "#0057b8", match: /sunoco/i, kind: "host" },
+  { id: "phillips66", label: "Phillips 66 / Conoco", short: "Phillips 66", color: "#d52b1e", match: /phillips\s*66|conoco|76\s*station/i, kind: "host" },
+  { id: "marathon", label: "Marathon", color: "#003087", match: /marathon(?!\s*(race|run))/i, kind: "host" },
+  { id: "costco", label: "Costco", color: "#e31837", match: /costco/i, kind: "host" },
+  { id: "target", label: "Target", color: "#cc0000", match: /\btarget\b/i, kind: "host" },
+  { id: "kroger", label: "Kroger family stores", short: "Kroger", color: "#1a4f9c", match: /kroger|fred\s*meyer|king\s*soopers|ralphs|smith'?s food|harris\s*teeter/i, kind: "host" },
+  { id: "meijer", label: "Meijer", color: "#c8102e", match: /meijer/i, kind: "host" },
+  { id: "hyvee", label: "Hy-Vee", color: "#e2231a", match: /hy-?vee/i, kind: "host" },
+  { id: "whole_foods", label: "Whole Foods", color: "#00674b", match: /whole\s*foods/i, kind: "host" },
+  { id: "starbucks", label: "Starbucks", color: "#00704a", match: /starbucks/i, kind: "host" },
+  { id: "mcdonalds", label: "McDonald's", color: "#ffc72c", match: /mcdonald/i, kind: "host" },
+  { id: "subway", label: "Subway", color: "#008c15", match: /\bsubway\b/i, kind: "host" },
+  { id: "parking", label: "Parking garages", short: "Parking", color: "#6c757d", match: /parking|parkade/i, kind: "host" },
+];
+for (const n of NETWORKS) n.kind = n.kind ?? "network";
+/** Everything we recognise: networks first, then hosts, so an operator name always wins over a site name. */
+export const ALL_NETWORKS: Network[] = [...NETWORKS, ...HOSTS];
+
 export const OTHER_NETWORK: Network = { id: "other", label: "Other network", short: "Other", color: "#5b6478", match: /./ };
 export const UNKNOWN_NETWORK: Network = { id: "unknown", label: "Network not listed", short: "Unknown", color: "#9aa3b5", match: /./ };
 
@@ -80,14 +119,14 @@ export function detectNetwork(operator: string | null | undefined, name?: string
   const haystacks = [operator ?? "", name ?? ""].filter(Boolean);
   if (haystacks.length === 0) return UNKNOWN_NETWORK;
   for (const h of haystacks) {
-    for (const n of NETWORKS) if (n.match.test(h)) return n;
+    for (const n of ALL_NETWORKS) if (n.match.test(h)) return n;
   }
   if (operator && !/unknown|private|other|\(none\)/i.test(operator)) return { ...OTHER_NETWORK, label: operator.trim(), short: operator.trim().slice(0, 18) };
   return UNKNOWN_NETWORK;
 }
 
 export function networkById(id: string): Network {
-  return NETWORKS.find((n) => n.id === id) ?? (id === "other" ? OTHER_NETWORK : UNKNOWN_NETWORK);
+  return ALL_NETWORKS.find((n) => n.id === id) ?? (id === "other" ? OTHER_NETWORK : UNKNOWN_NETWORK);
 }
 
 /* ---------------- connectors ---------------- */

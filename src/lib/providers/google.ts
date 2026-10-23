@@ -13,16 +13,20 @@ import type { CategoryId, GeoResult, LatLng, Place, RouteResult } from "../types
 /* ------------------------------------------------------------------ */
 
 export const GOOGLE_TYPES: Record<CategoryId, string[]> = {
+  buffets: ["buffet_restaurant"],
   food: ["restaurant", "meal_takeaway", "bakery", "ice_cream_shop", "sandwich_shop", "pizza_restaurant", "diner"],
   coffee: ["cafe", "coffee_shop"],
   attractions: ["tourist_attraction", "museum", "zoo", "aquarium", "art_gallery", "amusement_park", "visitor_center"],
   outdoors: ["park", "national_park", "state_park", "hiking_area", "garden"],
   historic: ["historical_landmark", "historical_place", "monument"],
-  shopping: ["shopping_mall", "department_store", "gift_shop", "book_store", "clothing_store", "market"],
+  souvenirs: ["gift_shop"],
+  specialty: ["candy_store", "chocolate_shop", "cheese_shop", "deli", "wine_store", "liquor_store", "tea_house", "toy_store", "hobby_store", "art_studio", "butcher_shop", "farm"],
+  shopping: ["shopping_mall", "department_store", "book_store", "clothing_store", "market"],
   antiques: ["antique_store", "thrift_store"],
   entertainment: ["movie_theater", "performing_arts_theater", "casino", "bowling_alley", "amusement_center"],
   kids: ["amusement_park", "playground", "water_park", "childrens_camp"],
   lodging: ["hotel", "motel", "lodging", "resort_hotel", "bed_and_breakfast", "inn"],
+  travel: ["truck_stop"],
   fuel: ["gas_station"],
   ev: ["electric_vehicle_charging_station"],
   rest: ["rest_stop"],

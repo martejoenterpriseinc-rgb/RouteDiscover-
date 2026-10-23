@@ -43,7 +43,7 @@ function NewTripInner() {
         notes,
         route: reuseRoute ? trip.route : null,
       });
-      update({ activeTrip: { id: created.id, name: created.name } });
+      update({ activeTrip: { id: created.id, name: created.name, startDate: created.startDate, endDate: created.endDate } });
       router.push(`/app/trips/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save the trip.");

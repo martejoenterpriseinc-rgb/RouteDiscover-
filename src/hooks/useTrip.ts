@@ -12,7 +12,7 @@ export type Trip = {
   radiusTouched?: boolean;
   route?: RouteResult;
   /** Saved trip currently being planned (stops get added to it). */
-  activeTrip?: { id: string; name: string };
+  activeTrip?: { id: string; name: string; startDate?: string; endDate?: string };
   /** Signed-in user's preferences, seeded by the app layout. */
   preferences?: Preferences;
 };

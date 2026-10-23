@@ -19,6 +19,10 @@ test("detectNetwork recognises the major networks from operator or site name", (
   assert.equal(detectNetwork("Francis Energy").id, "francis");
   assert.equal(detectNetwork("Pilot Flying J").id, "pilot_flyingj");
   assert.equal(detectNetwork("7-Eleven 7Charge").id, "seven_charge");
+  assert.equal(detectNetwork("Love's Travel Stops").id, "loves");
+  assert.equal(detectNetwork(undefined, "Casey's General Store #123").id, "caseys");
+  assert.equal(detectNetwork("Electrify America", "Love's Travel Stop").id, "electrify_america", "the operator beats the host in the site name");
+  assert.equal(detectNetwork(undefined, "Costco Wholesale").id, "costco");
   assert.equal(detectNetwork(undefined, "Springfield Supercharger").id, "tesla", "falls back to the site name");
   const other = detectNetwork("Joe's Garage EV");
   assert.equal(other.id, "other");

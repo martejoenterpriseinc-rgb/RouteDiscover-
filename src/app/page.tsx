@@ -10,7 +10,7 @@ import { track } from "@/lib/events";
 import { getPublicStats } from "@/lib/public-stats";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { checkSignup } from "@/lib/access";
-import { NETWORKS } from "@/lib/ev-networks";
+import { ALL_NETWORKS } from "@/lib/ev-networks";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
@@ -122,15 +122,25 @@ export default async function LandingPage() {
           <p className="mx-auto mt-2 max-w-2xl text-center text-muted">
             RouteDiscover shows public chargers from every network it finds along your route, near you or at your destination, and anything it doesn&apos;t recognise is listed under the operator&apos;s own name, so nothing is left out.
           </p>
-          <ul className="mt-6 flex flex-wrap justify-center gap-2" aria-label="Charging networks">
-            {NETWORKS.map((n) => (
-              <li key={n.id} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" style={{ borderColor: `${n.color}55`, color: n.color, background: `${n.color}12` }}>
-                <span className="h-2 w-2 rounded-full" style={{ background: n.color }} aria-hidden />
-                {n.label}
-              </li>
-            ))}
-            <li className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm font-semibold text-muted">+ any other operator</li>
-          </ul>
+          {(
+            [
+              ["network", "Charging networks"],
+              ["host", "Gas stations, travel centers and stores that host chargers"],
+            ] as const
+          ).map(([kind, heading]) => (
+            <div key={kind} className="mt-6">
+              <h3 className="text-center text-xs font-semibold uppercase tracking-wide text-muted">{heading}</h3>
+              <ul className="mt-2 flex flex-wrap justify-center gap-2" aria-label={heading}>
+                {ALL_NETWORKS.filter((n) => n.kind === kind).map((n) => (
+                  <li key={n.id} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" style={{ borderColor: `${n.color}55`, color: n.color, background: `${n.color}12` }}>
+                    <span className="h-2 w-2 rounded-full" style={{ background: n.color }} aria-hidden />
+                    {n.label}
+                  </li>
+                ))}
+                {kind === "host" && <li className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm font-semibold text-muted">+ any other operator</li>}
+              </ul>
+            </div>
+          ))}
           <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-background p-4">
               <h3 className="font-bold">🔌 Every plug</h3>

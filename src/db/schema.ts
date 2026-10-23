@@ -84,7 +84,8 @@ export const preferences = pgTable("preferences", {
   updatedAt: updatedAt(),
 });
 
-export type TripStop = Place & { addedAt: string; note?: string; day?: string };
+/** `day` (YYYY-MM-DD) puts a stop on a day of the trip itinerary instead of the drive; `time` (HH:MM) orders it within the day. */
+export type TripStop = Place & { addedAt: string; note?: string; day?: string; time?: string };
 
 export const trips = pgTable(
   "trips",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useTrip } from "@/hooks/useTrip";
+import { fmtDateShort, tripDays } from "@/lib/dates";
 import { addStop } from "@/lib/trips-client";
 import type { Charger, Hotel, Place } from "@/lib/types";
 import { Button } from "./ui";
@@ -27,26 +28,46 @@ export function ActiveTripBanner() {
 export function AddToTripButton({ place }: { place: Place }) {
   const { trip } = useTrip();
   const [state, setState] = useState<"idle" | "busy" | "added" | "dup">("idle");
+  const [where, setWhere] = useState<string>("");
   if (!trip.activeTrip) return null;
   const id = trip.activeTrip.id;
+  const days = trip.activeTrip.startDate && trip.activeTrip.endDate ? tripDays(trip.activeTrip.startDate, trip.activeTrip.endDate) : [];
+  async function add(day?: string) {
+    setState("busy");
+    try {
+      const r = await addStop(id, place, undefined, day);
+      setState(r.added ? "added" : "dup");
+    } catch {
+      setState("idle");
+    }
+  }
+  const label = state === "added" ? (where ? `✓ Added to ${fmtDateShort(where)}` : "✓ Added to trip") : state === "dup" ? "Already in trip" : state === "busy" ? "Adding…" : "+ Add to trip";
+  if (days.length === 0 || state !== "idle") {
+    return (
+      <Button variant={state === "added" ? "primary" : "secondary"} className="px-3 py-1 text-xs" disabled={state !== "idle"} onClick={(e) => { e.stopPropagation(); void add(); }}>
+        {label}
+      </Button>
+    );
+  }
   return (
-    <Button
-      variant={state === "added" ? "primary" : "secondary"}
-      className="px-3 py-1 text-xs"
-      disabled={state === "busy"}
-      onClick={async (e) => {
-        e.stopPropagation();
-        setState("busy");
-        try {
-          const r = await addStop(id, place);
-          setState(r.added ? "added" : "dup");
-        } catch {
-          setState("idle");
-        }
+    <select
+      aria-label="Add to trip"
+      className="rounded-lg border border-border bg-surface px-2 py-1 text-xs font-semibold text-foreground hover:bg-cream"
+      value=""
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (!v) return;
+        setWhere(v === "route" ? "" : v);
+        void add(v === "route" ? undefined : v);
       }}
     >
-      {state === "added" ? "✓ Added to trip" : state === "dup" ? "Already in trip" : state === "busy" ? "Adding…" : "+ Add to trip"}
-    </Button>
+      <option value="">+ Add to trip…</option>
+      <option value="route">As a stop on the drive</option>
+      {days.map((d, i) => (
+        <option key={d} value={d}>Day {i + 1} · {fmtDateShort(d)}</option>
+      ))}
+    </select>
   );
 }
 

@@ -20,6 +20,10 @@ export const CATEGORY_COLORS: Record<CategoryId, string> = {
   restrooms: "#78909c",
   groceries: "#7cb342",
   campgrounds: "#2e7d32",
+  travel: "#b71c1c",
+  souvenirs: "#d81b60",
+  specialty: "#6d4c41",
+  buffets: "#ef6c00",
 };
 
 export const placeMarker = (p: Place): MapMarker => ({

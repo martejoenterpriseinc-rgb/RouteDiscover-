@@ -19,7 +19,11 @@ export type CategoryId =
   | "rest"
   | "restrooms"
   | "groceries"
-  | "campgrounds";
+  | "campgrounds"
+  | "travel"
+  | "souvenirs"
+  | "specialty"
+  | "buffets";
 
 export type Category = {
   id: CategoryId;

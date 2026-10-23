@@ -11,6 +11,18 @@ test("categorize maps OSM tags to app categories", () => {
   assert.equal(categorize({ amenity: "charging_station" }), "ev");
   assert.equal(categorize({ historic: "memorial", tourism: "attraction" }), "historic");
   assert.equal(categorize({ building: "yes" }), null);
+  assert.equal(categorize({ amenity: "fuel", brand: "Buc-ee's" }), "travel");
+  assert.equal(categorize({ amenity: "fuel", name: "Love's Travel Stop" }), "travel");
+  assert.equal(categorize({ amenity: "fuel", shop: "convenience" }), "travel");
+  assert.equal(categorize({ amenity: "fuel" }), "fuel");
+  assert.equal(categorize({ highway: "services" }), "travel");
+  assert.equal(categorize({ amenity: "restaurant", cuisine: "buffet" }), "buffets");
+  assert.equal(categorize({ amenity: "restaurant", name: "Shady Maple Smorgasbord" }), "buffets");
+  assert.equal(categorize({ amenity: "restaurant", name: "Joe's Diner" }), "food");
+  assert.equal(categorize({ shop: "gift" }), "souvenirs");
+  assert.equal(categorize({ shop: "convenience", name: "Gettysburg Souvenirs" }), "souvenirs", "name wins over a generic shop tag");
+  assert.equal(categorize({ shop: "chocolate" }), "specialty");
+  assert.equal(categorize({ shop: "mall" }), "shopping");
 });
 
 test("parseCategories drops unknown ids", () => {

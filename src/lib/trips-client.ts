@@ -28,8 +28,8 @@ export const createTrip = (input: {
 export const updateTrip = (id: string, patch: Record<string, unknown>) =>
   call<{ trip: TripRecord }>(`/api/trips/${id}`, { method: "PATCH", body: JSON.stringify(patch) }).then((r) => r.trip);
 export const deleteTrip = (id: string) => call<{ ok: true }>(`/api/trips/${id}`, { method: "DELETE" });
-export const addStop = (id: string, place: Place, note?: string) =>
-  call<{ trip: TripRecord; added: boolean }>(`/api/trips/${id}/stops`, { method: "POST", body: JSON.stringify({ place, note }) });
+export const addStop = (id: string, place: Place, note?: string, day?: string) =>
+  call<{ trip: TripRecord; added: boolean }>(`/api/trips/${id}/stops`, { method: "POST", body: JSON.stringify({ place, note, day }) });
 export const removeStop = (id: string, placeId: string) =>
   call<{ trip: TripRecord }>(`/api/trips/${id}/stops`, { method: "DELETE", body: JSON.stringify({ placeId }) }).then((r) => r.trip);
 export const shareTrip = (id: string, action: "enable" | "disable" | "rotate", channel?: string) =>
