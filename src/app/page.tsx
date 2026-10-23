@@ -51,7 +51,7 @@ export default async function LandingPage() {
             <a href="#features" className="hidden px-3 text-muted hover:text-foreground md:block">Features</a>
             <a href="#pricing" className="hidden px-3 text-muted hover:text-foreground md:block">Pricing</a>
             <ThemeToggle compact />
-            <Link href="/login" className="whitespace-nowrap rounded-full border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-cream sm:px-4">Sign in</Link>
+            <Link href="/login" className="whitespace-nowrap rounded-full bg-blue px-4 py-1.5 font-semibold text-white shadow-sm hover:brightness-110">Sign in</Link>
           </nav>
         </div>
       </header>
