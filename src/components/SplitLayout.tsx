@@ -30,14 +30,14 @@ export function SplitLayout({
         {list}
       </section>
       <section
-        className={`relative min-h-0 flex-1 ${mobileView === "list" ? "hidden md:block" : "block"} h-[calc(100vh-57px-64px)] md:h-auto`}
+        className={`relative min-h-0 flex-1 ${mobileView === "list" ? "hidden md:block" : "block"} h-[calc(100dvh-108px)] md:h-auto`}
       >
         {map}
       </section>
       <button
         type="button"
         onClick={() => setMobileView((v) => (v === "list" ? "map" : "list"))}
-        className="fixed bottom-20 left-1/2 z-[1050] -translate-x-1/2 rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white shadow-lg md:hidden"
+        className="fixed bottom-6 left-1/2 z-[1050] -translate-x-1/2 rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white shadow-lg md:hidden"
       >
         {mobileView === "list" ? "🗺️ Map" : "📋 List"}
       </button>

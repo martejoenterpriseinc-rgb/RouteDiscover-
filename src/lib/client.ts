@@ -28,7 +28,8 @@ export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | 
 export const fetchPlaces = (area: Area, categories: CategoryId[]) =>
   post<Place[]>("/api/places", { ...area, categories });
 
-export const fetchChargers = (area: Area) => post<Charger[]>("/api/chargers", area);
+export type ChargerQuery = { networks?: string[]; connectors?: string[]; minKw?: number; cost?: "any" | "free" | "paid"; superchargersOnly?: boolean };
+export const fetchChargers = (area: Area, q: ChargerQuery = {}) => post<Charger[]>("/api/chargers", { ...area, ...q });
 
 export const fetchHotels = (area: Area, kinds: Array<"hotel" | "campground"> = ["hotel"]) => post<Hotel[]>("/api/hotels", { ...area, kinds });
 

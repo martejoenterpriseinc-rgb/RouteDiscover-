@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import { THEME_BOOTSTRAP } from "@/lib/theme";
 import "./globals.css";
 
@@ -40,7 +41,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Sets data-theme before first paint so the chosen day/night theme never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <PageViewTracker />
+        {children}
+      </body>
     </html>
   );
 }

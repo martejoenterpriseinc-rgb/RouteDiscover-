@@ -1,5 +1,6 @@
 "use client";
 
+import { Disclosure } from "./Disclosure";
 import { useCallback, useEffect, useState } from "react";
 import type { AppSettings } from "@/lib/settings";
 import { Badge, Button, ErrorNote } from "./ui";
@@ -110,17 +111,11 @@ export function PublishBar({ c, onSave, saveLabel = "Update and save" }: { c: Re
 }
 
 export function Section({ title, subtitle, children, aside }: { title: string; subtitle?: string; children: React.ReactNode; aside?: React.ReactNode }) {
+  const id = `owner-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
   return (
-    <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-bold">{title}</h2>
-          {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
-        </div>
-        {aside}
-      </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">{children}</div>
-    </section>
+    <Disclosure id={id} title={title} subtitle={subtitle} aside={aside} size="lg" className="rounded-2xl border border-border bg-surface p-5 shadow-sm" bodyClassName="mt-4 grid gap-3 sm:grid-cols-2">
+      {children}
+    </Disclosure>
   );
 }
 

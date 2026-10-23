@@ -1,3 +1,4 @@
+import type { ChargerPricing, ConnectorType, SpeedTier } from "./ev-networks";
 export type LatLng = { lat: number; lng: number };
 
 export type DataSource = "live" | "demo";
@@ -89,15 +90,22 @@ export type Charger = {
   lat: number;
   lng: number;
   operator?: string;
-  network: "tesla" | "other";
+  /** Network id from src/lib/ev-networks.ts ("tesla", "electrify_america", …, "other", "unknown"). */
+  network: string;
+  networkLabel: string;
   /** True for Tesla Superchargers (DC fast). */
   supercharger: boolean;
   stalls?: number;
   maxKw?: number;
+  speedTier: SpeedTier;
   address?: string;
   cost?: string;
   costTier: "free" | "paid" | "unknown";
+  pricing?: ChargerPricing;
+  /** Source's own connector names. */
   connectors: string[];
+  /** Normalised connector types for filtering. */
+  connectorTypes: ConnectorType[];
   detourMiles?: number;
   alongMiles?: number;
   distanceMiles?: number;

@@ -16,7 +16,33 @@ export type OwnerStats = {
   referrals: ReferralProgramStats;
   passes: { sold: number; soldInRange: number; revenueCents: number; revenueInRangeCents: number; trialsActive: number; model: "pass" | "subscription" };
   businesses: { listings: number; claimed: number; claimedInRange: number; basic: number; sponsors: number; revenueCents: number; revenueInRangeCents: number; pendingSubmissions: number; flaggedSubmissions: number; submissionsInRange: number; approvedInRange: number; rejectedInRange: number };
-  series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[] };
+  series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[]; pageViews: DailyPoint[]; visitors: DailyPoint[] };
+  /** Site traffic in the range, excluding the owner's own browsing. */
+  traffic: {
+    pageViews: number;
+    visitors: number;
+    signedInVisitors: number;
+    viewsPerVisitor: number;
+    topPages: Array<{ label: string; value: number }>;
+    referrers: Array<{ label: string; value: number }>;
+    devices: Array<{ label: string; value: number }>;
+    campaigns: Array<{ label: string; value: number }>;
+    tracked: boolean;
+  };
+  /** Funnel and conversion rates for the range. */
+  conversion: {
+    visitors: number;
+    landingVisitors: number;
+    signupPageVisitors: number;
+    accountRequests: number;
+    signups: number;
+    paid: number;
+    visitorToSignupPct: number;
+    visitorToRequestPct: number;
+    signupPageToSignupPct: number;
+    signupToPaidPct: number;
+    visitorToPaidPct: number;
+  };
   recent: Array<{ id: number; type: string; userEmail: string | null; meta: Record<string, unknown>; createdAt: string }>;
   setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean; signupMode: "open" | "approval" | "closed" };
 };
@@ -154,6 +180,36 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
     .orderBy(desc(schema.events.id))
     .limit(20);
 
+  // Web traffic (page_view beacons), excluding the owner's own browsing.
+  const notOwner = sql`coalesce((${schema.events.meta} ->> 'owner')::boolean, false) = false`;
+  const trafficWhere = and(eq(schema.events.type, "page_view"), gte(schema.events.createdAt, since), notOwner);
+  const pageViews = await n(db.select({ c: count() }).from(schema.events).where(trafficWhere));
+  const visitors = await n(db.select({ c: sql<number>`count(distinct ${schema.events.anonId})` }).from(schema.events).where(trafficWhere));
+  const signedInVisitors = await n(db.select({ c: sql<number>`count(distinct ${schema.events.userId})` }).from(schema.events).where(and(trafficWhere, sql`${schema.events.userId} is not null`)));
+  const grouped = async (expr: ReturnType<typeof sql<string>>, limit = 8) => {
+    const rows = await db.select({ label: expr, value: count() }).from(schema.events).where(trafficWhere).groupBy(expr).orderBy(desc(count())).limit(limit);
+    return rows.map((r) => ({ label: r.label || "(none)", value: Number(r.value) }));
+  };
+  const topPages = await grouped(sql<string>`${schema.events.meta} ->> 'path'`, 10);
+  const referrers = (await grouped(sql<string>`${schema.events.meta} ->> 'ref'`)).map((r) => ({ ...r, label: r.label === "(none)" || r.label === "" ? "Direct / none" : r.label }));
+  const devices = await grouped(sql<string>`${schema.events.meta} ->> 'device'`);
+  const campaigns = (await grouped(sql<string>`concat_ws(' / ', ${schema.events.meta} ->> 'utm_source', ${schema.events.meta} ->> 'utm_medium', ${schema.events.meta} ->> 'utm_campaign')`)).filter((r) => r.label !== "(none)" && r.label !== "");
+  const signupPageVisitors = await n(
+    db.select({ c: sql<number>`count(distinct ${schema.events.anonId})` }).from(schema.events).where(and(trafficWhere, sql`${schema.events.meta} ->> 'path' = '/signup'`)),
+  );
+  const accountRequests = await eventCount("account_requested", since);
+  const paidInRange = new Set(subs.filter((r) => r.kind !== "trial" && r.amountCents > 0 && r.createdAt >= since).map((r) => r.userId)).size;
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
+  const trafficSeries = async (distinctVisitors: boolean) =>
+    fillSeries(
+      await db
+        .select({ day: dayKey, value: distinctVisitors ? sql<number>`count(distinct ${schema.events.anonId})` : count() })
+        .from(schema.events)
+        .where(trafficWhere)
+        .groupBy(dayKey),
+      rangeDays,
+    );
+
   return {
     generatedAt: new Date().toISOString(),
     rangeDays,
@@ -169,6 +225,32 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
       landingViews: await series("landing_view"),
       subscriptionsStarted: await series("subscription_started"),
       downloads: await series("download_click"),
+      pageViews: await trafficSeries(false),
+      visitors: await trafficSeries(true),
+    },
+    traffic: {
+      pageViews,
+      visitors,
+      signedInVisitors,
+      viewsPerVisitor: visitors > 0 ? Math.round((pageViews / visitors) * 10) / 10 : 0,
+      topPages,
+      referrers,
+      devices,
+      campaigns,
+      tracked: pageViews > 0,
+    },
+    conversion: {
+      visitors,
+      landingVisitors,
+      signupPageVisitors,
+      accountRequests,
+      signups: newInRange,
+      paid: paidInRange,
+      visitorToSignupPct: pct(newInRange, visitors || landingVisitors),
+      visitorToRequestPct: pct(accountRequests, visitors || landingVisitors),
+      signupPageToSignupPct: pct(newInRange, signupPageVisitors),
+      signupToPaidPct: pct(paidInRange, newInRange),
+      visitorToPaidPct: pct(paidInRange, visitors || landingVisitors),
     },
     recent: recentRows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
     setup: {

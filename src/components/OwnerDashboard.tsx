@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Disclosure } from "./Disclosure";
 import { BarList, LineChart, StatTile, compact } from "./Charts";
 import { DataSourcesCard } from "./DataSourcesCard";
 import { Badge } from "./ui";
@@ -44,11 +45,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
   return (
     <div className="flex flex-col gap-4">
       {done < setupItems.length && (
-        <div className="rounded-2xl border border-orange/50 bg-cream p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold">Launch checklist</h2>
-            <span className="text-sm text-muted">{done} of {setupItems.length} done</span>
-          </div>
+        <Disclosure id="dash-checklist" title="Launch checklist" aside={<span className="text-sm text-muted">{done} of {setupItems.length} done</span>} className="rounded-2xl border border-orange/50 bg-cream p-4">
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
             {setupItems.map((i) => (
               <li key={i.label} className="text-sm">
@@ -62,11 +59,47 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
           {!s.setup.stripeConnected && s.setup.requireSubscription && (
             <p className="mt-2 text-xs text-muted">Until Stripe is connected, everyone gets free access even though subscriptions are required.</p>
           )}
-        </div>
+        </Disclosure>
       )}
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Revenue</h2>
+      <Disclosure id="dash-traffic" title="Web traffic" size="sm" bodyClassName="mt-2 flex flex-col gap-3">
+        {!s.traffic.tracked && <p className="text-xs text-muted">Page views are recorded from the moment this version went live; numbers fill in as people visit.</p>}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Page views" value={compact(s.traffic.pageViews)} sub={`last ${r} days · ${s.traffic.viewsPerVisitor} per visitor`} trend={s.series.pageViews} accent />
+          <StatTile label="Unique visitors" value={compact(s.traffic.visitors)} sub={`${s.traffic.signedInVisitors} signed in · ${Math.max(0, s.traffic.visitors - s.traffic.signedInVisitors)} anonymous`} trend={s.series.visitors} />
+          <StatTile label="Landing page" value={compact(s.acquisition.landingViews)} sub={`${s.acquisition.landingVisitors} visitors`} trend={s.series.landingViews} />
+          <StatTile label="Top device" value={s.traffic.devices[0]?.label ?? "—"} sub={s.traffic.devices.map((d) => `${d.label} ${s.traffic.pageViews ? Math.round((d.value / s.traffic.pageViews) * 100) : 0}%`).join(" · ") || "no data yet"} />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <LineChart title={`Page views vs. unique visitors (last ${r} days)`} series={[{ name: "Page views", points: s.series.pageViews }, { name: "Visitors", points: s.series.visitors }]} />
+          <BarList title="Top pages" rows={s.traffic.topPages.length ? s.traffic.topPages : [{ label: "No page views yet", value: 0 }]} />
+          <BarList title="Where visitors come from" rows={s.traffic.referrers.length ? s.traffic.referrers : [{ label: "No referrer data yet", value: 0 }]} />
+          <BarList title="Campaigns (UTM tags)" rows={s.traffic.campaigns.length ? s.traffic.campaigns : [{ label: "No tagged links yet — add ?utm_source=… to links you share", value: 0 }]} />
+        </div>
+      </Disclosure>
+
+      <Disclosure id="dash-conversion" title="Conversion" size="sm" bodyClassName="mt-2 flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Visitor → account" value={`${s.conversion.visitorToSignupPct}%`} sub={`${s.conversion.signups} accounts from ${s.conversion.visitors || s.conversion.landingVisitors} visitors`} accent />
+          {s.setup.signupMode === "approval" && <StatTile label="Visitor → request" value={`${s.conversion.visitorToRequestPct}%`} sub={`${s.conversion.accountRequests} account requests`} />}
+          <StatTile label="Sign-up page → account" value={`${s.conversion.signupPageToSignupPct}%`} sub={`${s.conversion.signupPageVisitors} reached the sign-up page`} />
+          <StatTile label="Account → paid" value={`${s.conversion.signupToPaidPct}%`} sub={`${s.conversion.paid} paid in the last ${r} days`} />
+          <StatTile label="Visitor → paid" value={`${s.conversion.visitorToPaidPct}%`} sub="end-to-end" />
+        </div>
+        <BarList
+          title={`Funnel (last ${r} days)`}
+          rows={[
+            { label: "Unique visitors", value: s.conversion.visitors || s.conversion.landingVisitors },
+            { label: "Landing page visitors", value: s.conversion.landingVisitors },
+            { label: "Reached sign-up page", value: s.conversion.signupPageVisitors },
+            ...(s.setup.signupMode === "approval" ? [{ label: "Requested an account", value: s.conversion.accountRequests }] : []),
+            { label: "Created an account", value: s.conversion.signups },
+            { label: "Paid", value: s.conversion.paid },
+          ]}
+        />
+      </Disclosure>
+
+      <Disclosure id="dash-revenue" title="Revenue" size="sm" bodyClassName="mt-2">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {s.passes.model === "pass" ? (
             <StatTile label="Pass revenue" value={money(s.passes.revenueCents, s.subscriptions.currency)} sub={`${money(s.passes.revenueInRangeCents, s.subscriptions.currency)} in the last ${r} days · ${s.passes.sold} passes sold`} accent />
@@ -77,20 +110,18 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
           <StatTile label="Canceled" value={s.subscriptions.canceled} sub={`${s.subscriptions.cancelingAtPeriodEnd} set to cancel at period end`} />
           <StatTile label="Churn (30 days)" value={`${s.subscriptions.churnRatePct}%`} sub={`${s.subscriptions.conversionPct}% of accounts have ever paid`} />
         </div>
-      </section>
+      </Disclosure>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Users</h2>
+      <Disclosure id="dash-users" title="Users" size="sm" bodyClassName="mt-2">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile label="Total accounts" value={s.users.total} sub={`+${s.users.newInRange} in the last ${r} days`} trend={s.series.signups} />
           <StatTile label="Signed up (7 days)" value={s.users.new7d} />
           <StatTile label="Active today" value={s.users.active1d} sub={`${s.users.active7d} this week · ${s.users.active30d} this month`} />
           <StatTile label="Logins" value={s.engagement.logins} sub={`last ${r} days`} />
         </div>
-      </section>
+      </Disclosure>
 
-      <section>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Downloads & acquisition</h2>
+      <Disclosure id="dash-acquisition" title="Downloads & acquisition" size="sm" bodyClassName="mt-2">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile label="App Store clicks" value={s.acquisition.storeClicksIos} sub="Badge clicks on the landing page" />
           <StatTile label="Google Play clicks" value={s.acquisition.storeClicksAndroid} sub="Badge clicks on the landing page" />
@@ -100,11 +131,10 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
         <p className="mt-2 text-xs text-muted">
           Store downloads themselves are reported by App Store Connect and Google Play Console; connect those under Integrations → Custom APIs once the native apps ship.
         </p>
-      </section>
+      </Disclosure>
 
-      <section>
+      <Disclosure id="dash-referrals" title="Referral program" size="sm" bodyClassName="mt-2">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Referral program</h2>
           <Link href="/owner/referrals" className="text-xs font-semibold text-blue hover:underline">Referral details →</Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -113,11 +143,10 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
           <StatTile label="Qualified referrals" value={s.referrals.qualified} sub={`+${s.referrals.qualifiedInRange} in ${r}d`} />
           <StatTile label="Credits issued" value={money(s.referrals.creditsIssuedCents, s.subscriptions.currency)} sub={`${money(s.referrals.creditsRedeemedCents, s.subscriptions.currency)} redeemed · ${money(s.referrals.creditsOutstandingCents, s.subscriptions.currency)} outstanding`} />
         </div>
-      </section>
+      </Disclosure>
 
-      <section>
+      <Disclosure id="dash-businesses" title="Businesses" size="sm" bodyClassName="mt-2">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Businesses</h2>
           <div className="flex gap-3 text-xs font-semibold">
             <Link href="/owner/businesses" className="text-blue hover:underline">All businesses →</Link>
             <Link href="/owner/moderation" className="text-blue hover:underline">Moderation queue →</Link>
@@ -129,16 +158,18 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
           <StatTile label="Sponsors (active)" value={s.businesses.sponsors} sub={`${s.businesses.basic} on Basic monitoring`} />
           <StatTile label="Updates awaiting review" value={s.businesses.pendingSubmissions} sub={`${s.businesses.flaggedSubmissions} held for your audit · ${s.businesses.approvedInRange} approved / ${s.businesses.rejectedInRange} rejected in ${r}d`} />
         </div>
-      </section>
+      </Disclosure>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Disclosure id="dash-trends" title="Trends" size="sm" bodyClassName="mt-2 grid gap-4 lg:grid-cols-2">
         <LineChart title={`Signups vs. landing visitors (last ${r} days)`} series={[{ name: "Signups", points: s.series.signups }, { name: "Landing views", points: s.series.landingViews }]} />
         <LineChart title={`Subscriptions started vs. store clicks (last ${r} days)`} series={[{ name: "Subscriptions", points: s.series.subscriptionsStarted }, { name: "Store clicks", points: s.series.downloads }]} />
-      </div>
+      </Disclosure>
 
-      <DataSourcesCard />
+      <Disclosure id="dash-sources" title="Data sources & usage" size="sm" bodyClassName="mt-2">
+        <DataSourcesCard />
+      </Disclosure>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <Disclosure id="dash-engagement" title="Engagement & recent activity" size="sm" bodyClassName="mt-2 grid gap-4 lg:grid-cols-2">
         <BarList
           title="Engagement"
           rows={[
@@ -169,7 +200,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
             </ul>
           )}
         </figure>
-      </div>
+      </Disclosure>
       <p className="text-right text-xs text-muted">Updated {new Date(s.generatedAt).toLocaleString()}</p>
     </div>
   );

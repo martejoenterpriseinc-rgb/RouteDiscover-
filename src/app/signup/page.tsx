@@ -14,7 +14,7 @@ import { REFERRAL_COOKIE, getCurrentUser } from "@/lib/auth";
 export const metadata: Metadata = { title: "Create account" };
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ ref?: string; invite?: string }> }) {
-  if (await getCurrentUser()) redirect("/app");
+  if (await getCurrentUser()) redirect("/app/home");
   const { ref, invite } = await searchParams;
   const code = (ref || (await cookies()).get(REFERRAL_COOKIE)?.value || "").toUpperCase().slice(0, 16);
   let invited = false;

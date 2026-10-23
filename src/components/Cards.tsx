@@ -1,5 +1,6 @@
 "use client";
 
+import { CONNECTOR_LABEL, extraFees, networkById, pricingSummary, speedLabel } from "@/lib/ev-networks";
 import { CATEGORY_BY_ID } from "@/lib/categories";
 import { appleMapsLink, mapsLink } from "@/lib/client";
 import { fmtMiles } from "@/lib/geo";
@@ -124,11 +125,21 @@ export function ChargerCard({ charger, selected, onClick, action }: { charger: C
             <h3 className="truncate font-semibold">{charger.name}</h3>
             <Distance item={charger} />
           </div>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {charger.supercharger && <Badge tone="tesla">Tesla Supercharger</Badge>}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <NetworkBadge id={charger.network} label={charger.networkLabel} />
+            <Badge tone={charger.speedTier === "ultra" || charger.speedTier === "fast" ? "blue" : "neutral"}>{speedLabel(charger.speedTier, charger.maxKw)}</Badge>
             {charger.stalls ? <Badge>{charger.stalls} stalls</Badge> : null}
-            {charger.maxKw ? <Badge>up to {Math.round(charger.maxKw)} kW</Badge> : null}
+            {charger.connectorTypes.map((t) => (
+              <Badge key={t}>{CONNECTOR_LABEL[t]}</Badge>
+            ))}
           </div>
+          <p className="mt-1 text-sm">
+            <span className={`font-semibold ${charger.costTier === "free" ? "text-green" : ""}`}>{pricingSummary(charger.pricing, charger.costTier)}</span>
+            {extraFees(charger.pricing).length > 0 && <span className="text-xs text-muted"> · {extraFees(charger.pricing).join(" · ")}</span>}
+          </p>
+          {charger.pricing?.raw && (charger.pricing.perKwh != null || charger.pricing.perMinute != null) && charger.pricing.raw.length > 24 && (
+            <p className="text-[11px] text-muted" title="As published by the data source">Source wording: {charger.pricing.raw.slice(0, 140)}</p>
+          )}
           {charger.address && <p className="mt-1 text-xs text-muted">{charger.address}</p>}
           <Links item={charger} />
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -185,5 +196,17 @@ export function HotelCard({ hotel, selected, onClick, action }: { hotel: Hotel; 
         </div>
       </div>
     </Card>
+  );
+}
+
+/** Network pill in the network's own colour. */
+export function NetworkBadge({ id, label }: { id: string; label: string }) {
+  const n = networkById(id);
+  const color = id === "unknown" ? "#9aa3b5" : n.color;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold" style={{ borderColor: `${color}66`, color, background: `${color}14` }}>
+      <span className="h-2 w-2 rounded-full" style={{ background: color }} aria-hidden />
+      {label}
+    </span>
   );
 }

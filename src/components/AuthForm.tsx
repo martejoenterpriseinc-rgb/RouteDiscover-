@@ -10,7 +10,7 @@ import { Button, ErrorNote, PasswordInput } from "./ui";
 function Form({ mode, invite = "", presetEmail = "" }: { mode: "login" | "signup"; invite?: string; presetEmail?: string }) {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/app";
+  const next = params.get("next") || "/app/home";
   const ref = params.get("ref") || "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState(presetEmail);
@@ -30,7 +30,7 @@ function Form({ mode, invite = "", presetEmail = "" }: { mode: "login" | "signup
       });
       const j = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(j.error || "Something went wrong.");
-      router.push(next.startsWith("/") ? next : "/app");
+      router.push(next.startsWith("/") ? next : "/app/home");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
