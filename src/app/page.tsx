@@ -41,17 +41,17 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="h-10 w-auto" />
+            <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="brand-mark h-10 w-auto" />
             <Wordmark className="text-xl" />
           </Link>
           <nav className="ml-auto flex items-center gap-2 text-sm font-semibold">
             <a href="#features" className="hidden px-3 text-muted hover:text-foreground md:block">Features</a>
             <a href="#pricing" className="hidden px-3 text-muted hover:text-foreground md:block">Pricing</a>
-            <Link href="/login" className="rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
+            <Link href="/login" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
             {open ? (
-              <Link href="/signup" className="rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
+              <Link href="/signup" className="whitespace-nowrap rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
             ) : (
-              <span className="rounded-full border border-orange/50 bg-surface px-4 py-1.5 text-orange">Coming soon</span>
+              <span className="whitespace-nowrap rounded-full border border-orange/50 bg-surface px-4 py-1.5 text-orange">Coming soon</span>
             )}
           </nav>
         </div>
@@ -91,7 +91,7 @@ export default async function LandingPage() {
             </div>
           </div>
           <div className="flex justify-center">
-            <Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={420} height={420} priority className="h-64 w-64 drop-shadow-xl md:h-96 md:w-96" />
+            <span className="brand-plate"><Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={420} height={420} priority className="h-64 w-64 drop-shadow-xl md:h-96 md:w-96" /></span>
           </div>
         </div>
       </section>

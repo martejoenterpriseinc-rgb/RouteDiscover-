@@ -7,7 +7,7 @@ import { CATEGORIES } from "@/lib/categories";
 import type { CategoryId, GeoResult } from "@/lib/types";
 import { PlaceInput } from "./PlaceInput";
 import { ShareButtons } from "./ShareButtons";
-import { Button, CategoryChips, ErrorNote, RadiusSlider, Segmented } from "./ui";
+import { Button, CategoryChips, ErrorNote, PasswordInput, RadiusSlider, Segmented } from "./ui";
 
 const field = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-base outline-none ring-blue/40 focus:ring-2";
 
@@ -222,7 +222,7 @@ export function DeleteAccountPanel() {
             router.refresh();
           }}
         >
-          <input className={field} type="password" placeholder="Confirm your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          <PasswordInput className={field} placeholder="Confirm your password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
           {error && <ErrorNote>{error}</ErrorNote>}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy} className="bg-gradient-to-r from-coral to-coral">{busy ? "Deleting…" : "Permanently delete"}</Button>

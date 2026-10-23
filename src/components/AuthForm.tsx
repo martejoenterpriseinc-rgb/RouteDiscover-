@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Wordmark } from "./AppNav";
-import { Button, ErrorNote } from "./ui";
+import { Button, ErrorNote, PasswordInput } from "./ui";
 
 function Form({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -42,7 +42,7 @@ function Form({ mode }: { mode: "login" | "signup" }) {
   return (
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex flex-col items-center gap-1 text-center">
-        <Image src="/brand/mark.png" alt="" width={48} height={58} className="h-14 w-auto" priority />
+        <Image src="/brand/mark.png" alt="" width={48} height={58} className="brand-mark h-14 w-auto" priority />
         <Wordmark className="text-2xl" />
         <h1 className="mt-2 text-lg font-semibold">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
         {mode === "signup" && ref && <p className="text-xs text-muted">Invited with code {ref}</p>}
@@ -59,9 +59,8 @@ function Form({ mode }: { mode: "login" | "signup" }) {
       </label>
       <label className="text-sm">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Password</span>
-        <input
+        <PasswordInput
           className={field}
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

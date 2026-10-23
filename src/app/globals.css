@@ -124,6 +124,27 @@ input[type="range"] {
   scrollbar-width: none;
 }
 
+/* Brand images: the mark and logo have transparent backgrounds. On dark screens the navy
+   road and wordmark would sink into the page, so the pin gets a soft light halo and the
+   full logo sits on a light plate so it looks exactly as designed. */
+.brand-mark {
+  display: inline-block;
+}
+.brand-plate {
+  display: inline-block;
+}
+@media (prefers-color-scheme: dark) {
+  .brand-mark {
+    filter: drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+  }
+  .brand-plate {
+    background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fff8ee 70%, #ffeeda 100%);
+    border-radius: 24%;
+    padding: 6%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  }
+}
+
 /* Wordmark on dark surfaces (owner console header) */
 .wordmark-light .route {
   color: #ffffff;

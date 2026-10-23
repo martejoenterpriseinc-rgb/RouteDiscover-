@@ -9,7 +9,7 @@ export function LegalPage({ text, updatedAt }: { text: string; updatedAt: string
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/brand/mark.png" alt="" width={36} height={43} className="h-10 w-auto" />
+            <Image src="/brand/mark.png" alt="" width={36} height={43} className="brand-mark h-10 w-auto" />
             <Wordmark className="text-xl" />
           </Link>
           <nav className="ml-auto flex gap-4 text-sm text-muted">

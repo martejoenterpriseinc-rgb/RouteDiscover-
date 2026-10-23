@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Wordmark } from "./AppNav";
-import { Button, ErrorNote } from "./ui";
+import { Button, ErrorNote, PasswordInput } from "./ui";
 
 const field = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-base outline-none ring-blue/40 focus:ring-2";
 
@@ -14,7 +14,7 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
     <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-cream to-background p-4">
       <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex flex-col items-center gap-1 text-center">
-          <Image src="/brand/mark.png" alt="" width={48} height={58} className="h-14 w-auto" />
+          <Image src="/brand/mark.png" alt="" width={48} height={58} className="brand-mark h-14 w-auto" />
           <Wordmark className="text-2xl" />
           <h1 className="mt-2 text-lg font-semibold">{title}</h1>
         </div>
@@ -97,7 +97,7 @@ function ResetInner() {
         >
           <label className="text-sm">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">New password</span>
-            <input className={field} type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
+            <PasswordInput className={field} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
           </label>
           {!token && <ErrorNote>This link is missing its token. Request a new reset link.</ErrorNote>}
           {error && <ErrorNote>{error}</ErrorNote>}

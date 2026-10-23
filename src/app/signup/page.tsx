@@ -26,7 +26,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   return (
     <main className="flex flex-1 items-center justify-center bg-gradient-to-b from-cream to-background p-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-6 text-center shadow-sm">
-        <Image src="/brand/mark.png" alt="" width={48} height={58} className="h-14 w-auto" priority />
+        <Image src="/brand/mark.png" alt="" width={48} height={58} className="brand-mark h-14 w-auto" priority />
         <Wordmark className="text-2xl" />
         <h1 className="mt-2 text-lg font-semibold">{gate.title}</h1>
         <p className="text-sm text-muted">{gate.message}</p>

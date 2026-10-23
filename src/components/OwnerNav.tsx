@@ -22,7 +22,7 @@ export function OwnerNav({ email }: { email: string }) {
     <header className="sticky top-0 z-[1100] border-b border-border bg-navy text-white">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-2">
         <Link href="/owner" className="flex items-center gap-2">
-          <Image src="/brand/mark.png" alt="" width={32} height={38} className="h-9 w-auto" />
+          <Image src="/brand/mark.png" alt="" width={32} height={38} className="brand-mark h-9 w-auto" />
           <Wordmark className="text-lg wordmark-light" />
           <span className="rounded-full bg-orange px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">Owner</span>
         </Link>

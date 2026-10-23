@@ -26,7 +26,7 @@ export default async function SharedTripPage({ params }: { params: Promise<{ tok
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/brand/mark.png" alt="" width={36} height={43} className="h-10 w-auto" />
+            <Image src="/brand/mark.png" alt="" width={36} height={43} className="brand-mark h-10 w-auto" />
             <Wordmark className="text-xl" />
           </Link>
           <span className="ml-auto text-sm text-muted">Shared trip</span>
