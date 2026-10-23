@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Database drivers ship native/wasm assets; keep them out of the server bundle.
+  serverExternalPackages: ["@electric-sql/pglite", "pg"],
   turbopack: {
     rules: {
       "*.css": {

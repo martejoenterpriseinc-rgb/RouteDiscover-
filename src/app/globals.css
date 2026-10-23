@@ -1,26 +1,133 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
+/* RouteDiscover brand palette (pulled from the logo) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbfaf7;
+  --foreground: #16213e;
+  --surface: #ffffff;
+  --muted: #5b6478;
+  --border: #e6e3dc;
+  --navy: #1c2b5a;
+  --blue: #1f8ae6;
+  --sky: #4fb3f6;
+  --orange: #f7941d;
+  --coral: #f15a29;
+  --green: #4caf50;
+  --cream: #fff4e6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1526;
+    --foreground: #eef1f7;
+    --surface: #182038;
+    --muted: #a3acc2;
+    --border: #2a3350;
+    --cream: #2a2230;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-navy: var(--navy);
+  --color-blue: var(--blue);
+  --color-sky: var(--sky);
+  --color-orange: var(--orange);
+  --color-coral: var(--coral);
+  --color-green: var(--green);
+  --color-cream: var(--cream);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Brand wordmark: "Route" navy, "Discover" blue, like the logo */
+.wordmark {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.wordmark .route {
+  color: var(--navy);
+}
+.wordmark .discover {
+  color: var(--blue);
+}
+@media (prefers-color-scheme: dark) {
+  .wordmark .route {
+    color: #c9d3f5;
+  }
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: #e9eef5;
+}
+.rd-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px 9999px 9999px 0;
+  transform: rotate(-45deg);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  font-size: 15px;
+  line-height: 1;
+}
+.rd-marker > span {
+  transform: rotate(45deg);
+}
+.rd-marker.selected {
+  outline: 3px solid var(--orange);
+  outline-offset: 1px;
+  z-index: 1000;
+}
+.rd-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.leaflet-popup-content {
+  margin: 10px 12px;
+  font-size: 13px;
+}
+
+input[type="range"] {
+  accent-color: var(--blue);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Wordmark on dark surfaces (owner console header) */
+.wordmark-light .route {
+  color: #ffffff;
+}
+.wordmark-light .discover {
+  color: var(--sky);
 }

@@ -1,0 +1,299 @@
+import "server-only";
+import { eq } from "drizzle-orm";
+import Stripe from "stripe";
+import { getDb, schema } from "@/db";
+import type { SubscriptionStatus, User } from "@/db/schema";
+import { grantPass } from "./billing";
+import { grantPlan, setBasicPlanStatus } from "./business";
+import { track } from "./events";
+import { attachCreditsToSession, finalizeCredits, recordPaidPeriod, reserveCredits } from "./referrals";
+import { getLiveSettings, patchLiveAndDraft, type AppSettings } from "./settings";
+
+export async function getStripe(settings?: AppSettings): Promise<Stripe | null> {
+  const s = settings ?? (await getLiveSettings());
+  const key = s.integrations.stripe.secretKey;
+  if (!key) return null;
+  return new Stripe(key, { appInfo: { name: "RouteDiscover" } });
+}
+
+/**
+ * Make sure Stripe has a Product + recurring monthly Price matching the owner's
+ * pricing settings. A changed amount creates a new Price (Stripe prices are
+ * immutable) and archives the old one. Returns the ids, which are stored in
+ * both draft and live settings.
+ */
+export async function syncStripePrice(): Promise<{ productId: string; priceId: string; created: boolean }> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  if (!stripe) throw new Error("Stripe secret key is not configured.");
+  const { monthlyPriceCents, currency } = s.pricing;
+  let productId = s.pricing.stripeProductId;
+  if (productId) {
+    const existing = await stripe.products.retrieve(productId).catch(() => null);
+    if (!existing || existing.deleted) productId = "";
+  }
+  if (!productId) {
+    const product = await stripe.products.create({ name: `${s.app.name} monthly`, description: s.app.tagline });
+    productId = product.id;
+  }
+  let priceId = s.pricing.stripePriceId;
+  let created = false;
+  if (priceId) {
+    const existing = await stripe.prices.retrieve(priceId).catch(() => null);
+    const matches =
+      existing &&
+      existing.active &&
+      existing.unit_amount === monthlyPriceCents &&
+      existing.currency === currency.toLowerCase() &&
+      (s.pricing.model === "subscription" ? existing.recurring?.interval === "month" : !existing.recurring) &&
+      existing.product === productId;
+    if (!matches) {
+      if (existing?.active) await stripe.prices.update(priceId, { active: false }).catch(() => null);
+      priceId = "";
+    }
+  }
+  if (!priceId) {
+    const price = await stripe.prices.create({
+      product: productId,
+      unit_amount: monthlyPriceCents,
+      currency: currency.toLowerCase(),
+      ...(s.pricing.model === "subscription" ? { recurring: { interval: "month" } } : {}),
+    });
+    priceId = price.id;
+    created = true;
+  }
+  await patchLiveAndDraft({ pricing: { stripeProductId: productId, stripePriceId: priceId } });
+  return { productId, priceId, created };
+}
+
+/** Stripe product + prices for the two business plans (Basic recurring, Sponsor one-time). */
+export async function syncBusinessPrices(): Promise<{ basicPriceId: string; sponsorPriceId: string }> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  if (!stripe) throw new Error("Stripe secret key is not configured.");
+  const b = s.business;
+  let productId = b.stripeProductId;
+  if (productId) {
+    const existing = await stripe.products.retrieve(productId).catch(() => null);
+    if (!existing || existing.deleted) productId = "";
+  }
+  if (!productId) {
+    const product = await stripe.products.create({ name: `${s.app.name} for businesses`, description: "Claim your listing, edit what travelers see, monitor traffic, and sponsor placement." });
+    productId = product.id;
+  }
+  const ensure = async (priceId: string, amount: number, recurring: boolean): Promise<string> => {
+    if (priceId) {
+      const existing = await stripe.prices.retrieve(priceId).catch(() => null);
+      const matches = existing && existing.active && existing.unit_amount === amount && existing.currency === s.pricing.currency.toLowerCase() && existing.product === productId && (recurring ? existing.recurring?.interval === "month" : !existing.recurring);
+      if (matches) return priceId;
+      if (existing?.active) await stripe.prices.update(priceId, { active: false }).catch(() => null);
+    }
+    const price = await stripe.prices.create({ product: productId, unit_amount: amount, currency: s.pricing.currency.toLowerCase(), ...(recurring ? { recurring: { interval: "month" } } : {}) });
+    return price.id;
+  };
+  const basicPriceId = await ensure(b.stripeBasicPriceId, b.basicPriceCents, true);
+  const sponsorPriceId = await ensure(b.stripeSponsorPriceId, b.sponsorPriceCents, false);
+  await patchLiveAndDraft({ business: { stripeProductId: productId, stripeBasicPriceId: basicPriceId, stripeSponsorPriceId: sponsorPriceId } });
+  return { basicPriceId, sponsorPriceId };
+}
+
+export async function createBusinessCheckout(user: User, businessId: string, plan: "basic" | "sponsor", origin: string): Promise<string> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  const priceId = plan === "basic" ? s.business.stripeBasicPriceId : s.business.stripeSponsorPriceId;
+  if (!stripe || !priceId) throw new Error("Business billing is not set up yet.");
+  const customer = await ensureCustomer(stripe, user);
+  const metadata = { kind: `business_${plan}`, businessId, userId: user.id };
+  const session = await stripe.checkout.sessions.create({
+    mode: plan === "basic" ? "subscription" : "payment",
+    customer,
+    line_items: [{ price: priceId, quantity: 1 }],
+    metadata,
+    ...(plan === "basic" ? { subscription_data: { metadata } } : {}),
+    success_url: `${origin}/app/business/${businessId}?checkout=success`,
+    cancel_url: `${origin}/app/business/claim/${businessId}?checkout=canceled`,
+  });
+  await track("checkout_started", { userId: user.id, meta: { kind: metadata.kind, businessId } });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+  return session.url;
+}
+
+export async function ensureCustomer(stripe: Stripe, user: User): Promise<string> {
+  if (user.stripeCustomerId) return user.stripeCustomerId;
+  const customer = await stripe.customers.create({ email: user.email, name: user.name || undefined, metadata: { userId: user.id } });
+  const db = await getDb();
+  await db.update(schema.users).set({ stripeCustomerId: customer.id }).where(eq(schema.users.id, user.id));
+  return customer.id;
+}
+
+export async function createCheckoutSession(user: User, origin: string): Promise<string> {
+  const s = await getLiveSettings();
+  const stripe = await getStripe(s);
+  if (!stripe || !s.pricing.stripePriceId) throw new Error("Billing is not set up yet.");
+  const customer = await ensureCustomer(stripe, user);
+  const isPass = s.pricing.model === "pass";
+  // Referral credit becomes a one-off Stripe coupon on this checkout.
+  const placeholder = `pending:${user.id}:${Date.now()}`;
+  const credit = await reserveCredits(user.id, placeholder, Math.max(0, s.pricing.monthlyPriceCents - 50));
+  const discounts: Array<{ coupon: string }> = [];
+  if (credit > 0) {
+    const coupon = await stripe.coupons.create({ amount_off: credit, currency: s.pricing.currency.toLowerCase(), duration: "once", name: "Referral credit", max_redemptions: 1 });
+    discounts.push({ coupon: coupon.id });
+  }
+  const metadata = { kind: isPass ? "pass" : "subscription", userId: user.id, creditCents: String(credit) };
+  const session = await stripe.checkout.sessions.create({
+    mode: isPass ? "payment" : "subscription",
+    customer,
+    line_items: [{ price: s.pricing.stripePriceId, quantity: 1 }],
+    ...(discounts.length ? { discounts } : { allow_promotion_codes: true }),
+    metadata,
+    ...(isPass
+      ? {}
+      : {
+          subscription_data: {
+            metadata,
+            ...(s.pricing.trialEnabled && s.pricing.trialDays > 0 ? { trial_period_days: s.pricing.trialDays } : {}),
+          },
+        }),
+    success_url: `${origin}/app/subscribe?checkout=success`,
+    cancel_url: `${origin}/app/subscribe?checkout=canceled`,
+  });
+  if (credit > 0) await attachCreditsToSession(placeholder, session.id);
+  await track("checkout_started", { userId: user.id, meta: { kind: metadata.kind, creditCents: credit } });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+  return session.url;
+}
+
+export async function createPortalSession(user: User, origin: string): Promise<string> {
+  const stripe = await getStripe();
+  if (!stripe) throw new Error("Billing is not set up yet.");
+  const customer = await ensureCustomer(stripe, user);
+  const session = await stripe.billingPortal.sessions.create({ customer, return_url: `${origin}/app/account` });
+  return session.url;
+}
+
+/* ------------------------------------------------------------------ */
+/* Webhooks                                                            */
+/* ------------------------------------------------------------------ */
+
+type SubLike = {
+  id: string;
+  customer: string | { id: string };
+  status: string;
+  items?: { data?: Array<{ price?: { id?: string } | null; current_period_end?: number | null }> };
+  current_period_end?: number | null;
+  cancel_at_period_end?: boolean | null;
+  canceled_at?: number | null;
+  metadata?: Record<string, string> | null;
+};
+
+async function userIdForSubscription(sub: SubLike): Promise<string | null> {
+  if (sub.metadata?.userId) return sub.metadata.userId;
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const db = await getDb();
+  const user = await db.query.users.findFirst({ where: eq(schema.users.stripeCustomerId, customerId) });
+  return user?.id ?? null;
+}
+
+/** Upsert our subscription row from a Stripe subscription object. Returns the stored status. */
+export async function applySubscription(sub: SubLike): Promise<SubscriptionStatus | null> {
+  const userId = await userIdForSubscription(sub);
+  if (!userId) return null;
+  const db = await getDb();
+  const status = sub.status as SubscriptionStatus;
+  const periodEnd = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end ?? null;
+  const existing = await db.query.subscriptions.findFirst({ where: eq(schema.subscriptions.stripeSubscriptionId, sub.id) });
+  const values = {
+    userId,
+    stripeSubscriptionId: sub.id,
+    stripePriceId: sub.items?.data?.[0]?.price?.id ?? null,
+    status,
+    currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+    cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+    canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+    updatedAt: new Date(),
+  };
+  await db
+    .insert(schema.subscriptions)
+    .values(values)
+    .onConflictDoUpdate({ target: schema.subscriptions.stripeSubscriptionId, set: values });
+  const wasActive = existing && ["active", "trialing", "past_due"].includes(existing.status);
+  const isActive = ["active", "trialing", "past_due"].includes(status);
+  if (!existing && isActive) await track("subscription_started", { userId, meta: { status } });
+  else if (existing && !wasActive && isActive) await track("subscription_started", { userId, meta: { status, reactivated: true } });
+  if (wasActive && !isActive) await track("subscription_canceled", { userId, meta: { status } });
+  return status;
+}
+
+/** Route a verified Stripe event to the right handler. Exported for tests. */
+export async function handleStripeEvent(event: { type: string; data: { object: unknown } }): Promise<string> {
+  switch (event.type) {
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as SubLike;
+      if (sub.metadata?.kind === "business_basic") {
+        const active = ["active", "trialing", "past_due"].includes(sub.status);
+        await setBasicPlanStatus(sub.id, active ? "active" : "canceled");
+        return `business plan ${sub.status}`;
+      }
+      const status = await applySubscription(sub);
+      return status ? `subscription ${status}` : "subscription ignored (unknown customer)";
+    }
+    case "checkout.session.completed": {
+      const session = event.data.object as { id: string; subscription?: string | null; customer?: string | null; metadata?: Record<string, string> | null; amount_total?: number | null; currency?: string | null };
+      const kind = session.metadata?.kind;
+      if (kind === "pass" && session.metadata?.userId) {
+        const settings = await getLiveSettings();
+        await grantPass(session.metadata.userId, { kind: "pass", days: settings.pricing.passDays, ref: session.id, amountCents: session.amount_total ?? 0, priceId: settings.pricing.stripePriceId });
+        await finalizeCredits(session.id);
+        await track("pass_purchased", { userId: session.metadata.userId, meta: { amountCents: session.amount_total ?? 0, days: settings.pricing.passDays } });
+        await recordPaidPeriod(session.metadata.userId, session.amount_total ?? 0);
+        return "pass granted";
+      }
+      if (kind === "subscription" && session.id) await finalizeCredits(session.id);
+      if ((kind === "business_basic" || kind === "business_sponsor") && session.metadata?.businessId && session.metadata.userId) {
+        await grantPlan({
+          businessId: session.metadata.businessId,
+          userId: session.metadata.userId,
+          plan: kind === "business_basic" ? "basic" : "sponsor",
+          stripeRef: kind === "business_basic" && session.subscription ? session.subscription : session.id,
+          amountCents: session.amount_total ?? 0,
+          currency: session.currency ?? "usd",
+        });
+        return `${kind} granted`;
+      }
+      if (session.subscription) {
+        const stripe = await getStripe();
+        if (stripe) {
+          const sub = await stripe.subscriptions.retrieve(session.subscription);
+          await applySubscription(sub as unknown as SubLike);
+          return "checkout applied";
+        }
+      }
+      return "checkout noted";
+    }
+    case "invoice.paid":
+    case "invoice.payment_succeeded": {
+      const inv = event.data.object as { customer?: string | null; amount_paid?: number | null; subscription?: string | null };
+      if (inv.customer && (inv.amount_paid ?? 0) > 0) {
+        const db = await getDb();
+        const user = await db.query.users.findFirst({ where: eq(schema.users.stripeCustomerId, inv.customer) });
+        if (user) await recordPaidPeriod(user.id, inv.amount_paid ?? 0);
+        return "paid period recorded";
+      }
+      return "invoice ignored";
+    }
+    case "invoice.payment_failed": {
+      const inv = event.data.object as { customer?: string | null };
+      if (inv.customer) {
+        const db = await getDb();
+        const user = await db.query.users.findFirst({ where: eq(schema.users.stripeCustomerId, inv.customer) });
+        if (user) await track("subscription_payment_failed", { userId: user.id });
+      }
+      return "payment failure noted";
+    }
+    default:
+      return "ignored";
+  }
+}
