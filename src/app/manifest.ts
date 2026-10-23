@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "RouteDiscover",
     short_name: "RouteDiscover",
     description:
-      "Find attractions, food, Tesla Superchargers and hotels with EV charging along your route.",
+      "Find attractions, food, EV charging on every network and hotels with chargers along your route.",
     start_url: "/",
     display: "standalone",
     background_color: "#fbfaf7",

@@ -158,7 +158,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     requireSubscription: true,
     features: [
       "Unlimited route corridor searches with 15 categories",
-      "Tesla Supercharger stops with walkable things to do",
+      "EV charging stops on every network, with rates, plug types and walkable things to do",
       "Hotels with free and paid EV charging",
       "Trip planner with calendar, history and saved stops",
       "Share trips by link, invite friends, post to social",
