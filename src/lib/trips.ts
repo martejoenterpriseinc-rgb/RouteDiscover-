@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import type { Trip, TripStop } from "@/db/schema";
 import { randomToken } from "./crypto";
+import { invalidatePublicStats } from "./public-stats";
 import { distanceToRoute, indexRoute, simplifyTo } from "./geo";
 import { route as planRoute } from "./providers/routing";
 import type { GeoResult, LatLng, Place } from "./types";
@@ -62,6 +63,7 @@ export async function createTrip(userId: string, input: NewTripInput): Promise<T
       shareToken: randomToken(12),
     })
     .returning();
+  invalidatePublicStats();
   return trip;
 }
 

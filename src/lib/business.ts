@@ -3,6 +3,7 @@ import { and, count, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import type { Business, BusinessPlan, BusinessSource, Submission, User } from "@/db/schema";
 import { track } from "./events";
+import { invalidatePublicStats } from "./public-stats";
 import { lookupPlace } from "./providers/places";
 import { getLiveSettings } from "./settings";
 import type { Hotel, Place } from "./types";
@@ -180,6 +181,7 @@ export async function grantPlan(opts: { businessId: string; userId: string; plan
     patch.claimedBy = opts.userId;
     patch.claimedAt = now;
     await track("business_claimed", { userId: opts.userId, meta: { businessId: business.id, plan: opts.plan, paid: opts.stripeRef !== "manual" } });
+    invalidatePublicStats();
   }
   if (opts.plan === "sponsor") {
     patch.sponsorUntil = endsAt;

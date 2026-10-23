@@ -26,3 +26,7 @@ export async function getPublicStats(): Promise<PublicStats> {
   globalThis.__routediscoverPublicStats = { value, at: Date.now() };
   return value;
 }
+
+export function invalidatePublicStats() {
+  globalThis.__routediscoverPublicStats = undefined;
+}

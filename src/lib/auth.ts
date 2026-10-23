@@ -7,6 +7,7 @@ import { getDb, schema } from "@/db";
 import type { User } from "@/db/schema";
 import { randomToken, sha256, shortCode } from "./crypto";
 import { track } from "./events";
+import { invalidatePublicStats } from "./public-stats";
 
 export const SESSION_COOKIE = "rd_session";
 export const REFERRAL_COOKIE = "rd_ref";
@@ -66,6 +67,7 @@ export async function createUser(input: { email: string; name: string; password:
     .returning();
   await db.insert(schema.preferences).values({ userId: user.id, data: schema.DEFAULT_PREFERENCES });
   await track("signup", { userId: user.id, meta: { role, referred: !!input.referredBy } });
+  invalidatePublicStats();
   return user;
 }
 
