@@ -6,7 +6,7 @@
 
 **Find everything worth stopping for along your drive.**
 
-RouteDiscover was born on a drive from Illinois to Lancaster, PA, where finding things to do along the way was harder than it should be. Plan a route, choose how many miles off the road you're willing to go, pick the kinds of places you care about, and see what's coming up, sorted by mile marker. Then do the same at your destination, find Tesla Superchargers with things to do while you charge, and pick a hotel where you can plug in overnight.
+RouteDiscover was born on a drive from Illinois to Lancaster, PA, where finding things to do along the way was harder than it should be. Plan a route, choose how many miles off the road you're willing to go, pick the kinds of places you care about, and see what's coming up, sorted by mile marker. Then do the same at your destination, find EV chargers on every network with things to do while you charge, and pick a hotel where you can plug in overnight.
 
 ## Features
 
@@ -16,7 +16,7 @@ RouteDiscover was born on a drive from Illinois to Lancaster, PA, where finding 
 | --- | --- |
 | **Route** | Enter a start and destination (or use your location), set a corridor width from 1 to 50 miles, and filter by category. Results show the mile marker where you'd leave the road and how far off route each stop is. "Only show what's ahead of me" uses your GPS position to hide stops you've already passed. |
 | **Destination** | Everything within a chosen radius of a place, by category. Defaults to your trip's destination. |
-| **Charging** | Tesla Superchargers along your route, near you, or at your destination. Tap one to see what's walkable (¼, ½, or 1 mile) while you charge: food, coffee, shopping, restrooms, parks. |
+| **Charging** | EV chargers from every network along your route, near you, or at your destination, filtered by plug, speed and price, with published rates and fees. Tap one to see what's walkable (¼, ½, or 1 mile) while you charge: food, coffee, shopping, restrooms, parks. |
 | **Hotels** | Hotels with EV charging, along the route or at the destination. Each hotel is flagged **free** or **paid** charging, **Tesla Destination** charger, **guests only** vs **open to public**, with connector types and port counts. |
 | **Trips** | Plan a trip with dates, see it on a **calendar**, add stops from any search ("+ Add to trip"), keep notes, mark it completed, and look back on **travel history** (trips taken, miles, stops). |
 | **Share & invite** | Turn on a **public link** for any trip, copy it, use the phone's native share sheet, or post to X, Facebook, WhatsApp, email or text. **Invite a friend** by email or referral link; friends who join are connected to your account. |
@@ -74,7 +74,7 @@ Without any keys, everything runs on free, open data:
 | Geocoding | [Nominatim](https://nominatim.org/) (OpenStreetMap) | Also accepts raw `lat, lng` |
 | Routing | [OSRM](https://project-osrm.org/) | Driving profile, full route geometry |
 | Places | [Overpass API](https://overpass-api.de/) (OpenStreetMap) | Corridor search uses Overpass's polyline `around` filter |
-| Superchargers & hotel chargers | [Open Charge Map](https://openchargemap.org/) | Tesla operator filter for Superchargers; cost text and usage type drive the free/paid/guest flags |
+| Chargers & hotel chargers | [Open Charge Map](https://openchargemap.org/) | Operator names map to networks (src/lib/ev-networks.ts); cost text is parsed into rates and fees and drives the free/paid/guest flags |
 | Hotel charging (second source) | OpenStreetMap `amenity=charging_station` | `fee`, `access`, `socket:*` tags |
 | Map tiles | OpenStreetMap | Swap in a commercial tile provider for production |
 
@@ -164,7 +164,7 @@ All search endpoints accept either a route corridor or a point:
 { "route": [{ "lat": 41.87, "lng": -87.62 }, ...], "radiusMiles": 10, "categories": ["food", "attractions"] }
 { "center": { "lat": 40.04, "lng": -76.31 }, "radiusMiles": 15, "categories": ["antiques"] }
 
-// POST /api/chargers  → Tesla Superchargers       { route | center, radiusMiles }
+// POST /api/chargers  → EV chargers, all networks  { route | center, radiusMiles, networks?, connectors?, minKw?, cost? }
 // POST /api/hotels    → hotels + charger details   { route | center, radiusMiles }
 // POST /api/route     → { origin, destination }    each a place name or { lat, lng }
 // GET  /api/geocode?q=Lancaster%20PA

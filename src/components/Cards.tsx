@@ -99,6 +99,10 @@ export function PlaceCard({ place, selected, onClick, action, details = true }: 
             {place.address ? ` · ${place.address}` : ""}
           </p>
           <ListingBadges item={place} />
+          <OutdoorBadges place={place} />
+          {place.hours && place.hours.openNow !== null && (
+            <p className="mt-1"><Badge tone={place.hours.openNow ? "free" : "paid"}>{place.hours.label}</Badge></p>
+          )}
           {place.openingHours && <p className="mt-1 text-xs text-muted">Hours: {place.openingHours}</p>}
           <Links item={place} />
           {(action || details) && (
@@ -209,4 +213,30 @@ export function NetworkBadge({ id, label }: { id: string; label: string }) {
       {label}
     </span>
   );
+}
+
+const SAC: Record<string, string> = { hiking: "Easy", mountain_hiking: "Moderate", demanding_mountain_hiking: "Hard", alpine_hiking: "Very hard", demanding_alpine_hiking: "Expert", difficult_alpine_hiking: "Expert" };
+
+/** Trail length/difficulty and camping fee/land-manager flags from the map data. */
+export function OutdoorBadges({ place }: { place: Place }) {
+  const t = place.tags ?? {};
+  const out: React.ReactNode[] = [];
+  if (place.category === "hiking" || place.category === "biking") {
+    if (t.distance) out.push(<Badge key="d">{/mi|km/i.test(t.distance) ? t.distance : `${t.distance} km`}</Badge>);
+    if (t.sac_scale && SAC[t.sac_scale]) out.push(<Badge key="s" tone={SAC[t.sac_scale] === "Easy" ? "free" : "paid"}>{SAC[t.sac_scale]}</Badge>);
+    if (t.surface) out.push(<Badge key="su">{t.surface.replace(/_/g, " ")}</Badge>);
+    if (/^osm-(relation|way)-/.test(place.id)) out.push(<Badge key="m" tone="blue">Tap to show trail on map</Badge>);
+  }
+  if (place.category === "camping_free" || place.category === "campgrounds") {
+    if (t.fee === "no" || place.category === "camping_free") out.push(<Badge key="f" tone="free">{t.fee === "no" ? "Free" : "Free / dispersed"}</Badge>);
+    if (t.fee === "yes" || t.charge) out.push(<Badge key="p" tone="paid">{t.charge ? `Fee: ${t.charge}` : "Fee"}</Badge>);
+    if (/bureau of land management|\bblm\b/i.test(t.operator ?? "")) out.push(<Badge key="blm" tone="blue">BLM</Badge>);
+    if (/forest service|usfs/i.test(t.operator ?? "")) out.push(<Badge key="usfs" tone="blue">USFS</Badge>);
+    if (/army corps/i.test(t.operator ?? "")) out.push(<Badge key="usace" tone="blue">Army Corps</Badge>);
+    if (t.backcountry === "yes") out.push(<Badge key="bc">Backcountry</Badge>);
+    if (t.reservation === "required") out.push(<Badge key="r" tone="paid">Reservation required</Badge>);
+  }
+  if (place.category === "hotsprings" && t.fee) out.push(<Badge key="hf" tone={t.fee === "no" ? "free" : "paid"}>{t.fee === "no" ? "Free" : "Fee"}</Badge>);
+  if (out.length === 0) return null;
+  return <div className="mt-1 flex flex-wrap gap-1">{out}</div>;
 }

@@ -15,7 +15,9 @@ async function resolve(v: unknown, what: string): Promise<GeoResult | NextRespon
   return bad(`${what} is required (text or {lat,lng})`);
 }
 
-/** POST { origin, destination } where each is a place name or {lat,lng,label}. */
+const MAX_VIA = 25;
+
+/** POST { origin, destination, via? } where each point is a place name or {lat,lng,label}; via is a list of stops in order. */
 export async function POST(req: Request) {
   const body = await readJson(req);
   if (body instanceof NextResponse) return body;
@@ -24,7 +26,16 @@ export async function POST(req: Request) {
     if (origin instanceof NextResponse) return origin;
     const destination = await resolve(body.destination, "destination");
     if (destination instanceof NextResponse) return destination;
-    const r = await route(origin, destination);
+    const via: GeoResult[] = [];
+    if (Array.isArray(body.via)) {
+      if (body.via.length > MAX_VIA) return bad(`at most ${MAX_VIA} stops per drive`);
+      for (const v of body.via) {
+        const g = parseGeoResult(v);
+        if (!g) return bad("each stop needs lat, lng and a label");
+        via.push(g);
+      }
+    }
+    const r = await route(origin, destination, via);
     return NextResponse.json({ source: r.source, notice: r.notice, data: { ...r.data, source: r.source } });
   } catch (err) {
     return handleError(err);

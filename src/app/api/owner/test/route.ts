@@ -88,6 +88,21 @@ export async function POST(req: Request) {
           return `Open Charge Map responded${i.openChargeMap.apiKey ? " with your API key" : " (no key: public rate limits apply)"}.`;
         });
         break;
+      case "ticketmaster":
+        result = await timed(async () => {
+          if (!i.ticketmaster.apiKey) throw new Error("Enter a Ticketmaster API key first.");
+          const url = new URL("https://app.ticketmaster.com/discovery/v2/events.json");
+          url.searchParams.set("apikey", i.ticketmaster.apiKey);
+          url.searchParams.set("latlong", "40.0379,-76.3055");
+          url.searchParams.set("radius", "50");
+          url.searchParams.set("unit", "miles");
+          url.searchParams.set("size", "1");
+          const res = await withTimeout(url.toString(), {});
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const j = (await res.json()) as { page?: { totalElements?: number } };
+          return `Ticketmaster responded: ${j.page?.totalElements ?? 0} events within 50 miles of Lancaster, PA.`;
+        });
+        break;
       case "routing":
         result = await timed(async () => {
           const res = await withTimeout(`${i.routing.osrmUrl.replace(/\/$/, "")}/route/v1/driving/-87.6298,41.8781;-76.3055,40.0379?overview=false`);

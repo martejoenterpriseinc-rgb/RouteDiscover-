@@ -13,8 +13,8 @@ type OsrmResponse = {
   }>;
 };
 
-async function liveRoute(origin: GeoResult, destination: GeoResult): Promise<Omit<RouteResult, "source">> {
-  const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+async function liveRoute(origin: GeoResult, destination: GeoResult, via: GeoResult[]): Promise<Omit<RouteResult, "source">> {
+  const coords = [origin, ...via, destination].map((p) => `${p.lng},${p.lat}`).join(";");
   const cfg = await getProviderConfig();
   const url = `${cfg.osrmUrl}/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
   const res = await fetchWithTimeout(url);
@@ -28,6 +28,7 @@ async function liveRoute(origin: GeoResult, destination: GeoResult): Promise<Omi
     durationMinutes: r.duration / 60,
     origin,
     destination,
+    via,
   };
 }
 
@@ -99,7 +100,7 @@ function densify(points: LatLng[]): LatLng[] {
   return out;
 }
 
-function demoRoute(origin: GeoResult, destination: GeoResult): Omit<RouteResult, "source"> {
+function demoLeg(origin: GeoResult, destination: GeoResult): Omit<RouteResult, "source"> {
   const a = nearestNode(origin);
   const b = nearestNode(destination);
   const core = a === b ? [origin, destination] : demoPath(a, b);
@@ -116,13 +117,30 @@ function demoRoute(origin: GeoResult, destination: GeoResult): Omit<RouteResult,
   };
 }
 
-export async function route(origin: GeoResult, destination: GeoResult) {
+/** Demo routing through stops: one leg per pair, joined in travel order. */
+export function demoRoute(origin: GeoResult, destination: GeoResult, via: GeoResult[] = []): Omit<RouteResult, "source"> {
+  const legs: Omit<RouteResult, "source">[] = [];
+  const points = [origin, ...via, destination];
+  for (let i = 1; i < points.length; i++) legs.push(demoLeg(points[i - 1], points[i]));
+  const geometry = legs.flatMap((l, i) => (i === 0 ? l.geometry : l.geometry.slice(1)));
+  return {
+    geometry,
+    distanceMiles: legs.reduce((s, l) => s + l.distanceMiles, 0),
+    durationMinutes: legs.reduce((s, l) => s + l.durationMinutes, 0),
+    origin,
+    destination,
+    via,
+  };
+}
+
+/** Plan a drive from origin to destination, optionally through `via` stops in order. */
+export async function route(origin: GeoResult, destination: GeoResult, via: GeoResult[] = []) {
   const cfg = await getProviderConfig();
-  const primary = cfg.google.routing ? { name: "Google Routes", run: () => googleRoute(cfg.google, origin, destination) } : null;
+  const primary = cfg.google.routing ? { name: "Google Routes", run: () => googleRoute(cfg.google, origin, destination, via) } : null;
   return withFallback(
     "Routing",
-    () => liveRoute(origin, destination),
-    () => demoRoute(origin, destination),
+    () => liveRoute(origin, destination, via),
+    () => demoRoute(origin, destination, via),
     primary,
   );
 }

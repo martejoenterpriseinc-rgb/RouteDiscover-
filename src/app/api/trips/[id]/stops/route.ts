@@ -39,7 +39,8 @@ export async function POST(req: Request, { params }: Ctx) {
     const place = parsePlace(b.place);
     if (!place) return fail("A place with id, name, lat and lng is required.");
     if (trip.stops.length >= 200) return fail("That's a lot of stops. Trips hold up to 200.");
-    const stops = withStop(trip, place, str(b.note, 500) || undefined);
+    const day = typeof b.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.day) ? b.day : undefined;
+    const stops = withStop(trip, place, str(b.note, 500) || undefined, day);
     const updated = await updateTrip(user.id, id, { stops });
     if (stops.length !== trip.stops.length) await track("stop_added", { userId: user.id, meta: { placeId: place.id, tripId: id } });
     return json({ trip: updated, added: stops.length !== trip.stops.length });

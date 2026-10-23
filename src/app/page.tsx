@@ -10,14 +10,17 @@ import { track } from "@/lib/events";
 import { getPublicStats } from "@/lib/public-stats";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { checkSignup } from "@/lib/access";
+import { ALL_NETWORKS } from "@/lib/ev-networks";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
 const FEATURES = [
-  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and see attractions, food, outdoors, history, antiques and more, sorted by mile marker." },
+  { icon: "🛣️", title: "Everything along your route", text: "Set how many miles off the highway you'll go and tick off any of 38 categories, each with a count of what's along your drive: food and buffets, wineries, attractions, caves, hiking and bike trails, boat launches, hot springs, go-karts and zip lines, golf and mini golf, flea markets, antique malls, travel centers, free and paid camping, spas and B&Bs, and more, sorted by mile marker." },
   { icon: "📍", title: "Destination lookup", text: "Arrive knowing what's around you. Search any radius around your destination by category." },
-  { icon: "⚡", title: "Supercharger stops that don't waste time", text: "Tesla Superchargers along the way, plus what's walkable while you charge: coffee, food, shopping, restrooms." },
-  { icon: "🏨", title: "Hotels with chargers", text: "Sleep where you can plug in. Free vs paid charging, Tesla Destination chargers and guest-only access, all flagged." },
-  { icon: "🗓️", title: "Plan it on a calendar", text: "Save trips with dates, build your stop list, and look back on your travel history." },
+  { icon: "⚡", title: "EV charging stops on every network", text: "Tesla, Electrify America, EVgo, ChargePoint, Rivian, IONNA and dozens more, filtered by plug, speed and price, with the published rate and fees on each stop and what's walkable while you charge." },
+  { icon: "🏨", title: "Hotels and campgrounds with chargers", text: "Sleep where you can plug in. Free vs paid charging, Tesla Destination and Level 2 chargers, RV hookups and guest-only access, all flagged." },
+  { icon: "🎟️", title: "Events along the way", text: "Fairs, festivals, concerts, car shows, swap meets, flea markets, the big multi-state yard sales, haunted houses and holiday lights, with dates and local times." },
+  { icon: "📡", title: "Around me, as you go", text: "Suggestions near you right now from the categories you chose, open-now status in the local time zone, and a follow mode that keeps up as you travel." },
+  { icon: "🗓️", title: "Plan it on a calendar", text: "Save trips with dates, build a day-by-day itinerary with a time for each stop, and look back on your travel history." },
   { icon: "🔗", title: "Share and invite", text: "Send a trip link, invite friends, and post your route to social media." },
 ];
 
@@ -112,6 +115,48 @@ export default async function LandingPage() {
               <p className="mt-1 text-sm text-muted">{f.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-y border-border bg-surface">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12">
+          <h2 className="text-center text-3xl font-extrabold tracking-tight">Every charging network, one search</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-muted">
+            RouteDiscover shows public chargers from every network it finds along your route, near you or at your destination, and anything it doesn&apos;t recognise is listed under the operator&apos;s own name, so nothing is left out.
+          </p>
+          {(
+            [
+              ["network", "Charging networks"],
+              ["host", "Gas stations, travel centers and stores that host chargers"],
+            ] as const
+          ).map(([kind, heading]) => (
+            <div key={kind} className="mt-6">
+              <h3 className="text-center text-xs font-semibold uppercase tracking-wide text-muted">{heading}</h3>
+              <ul className="mt-2 flex flex-wrap justify-center gap-2" aria-label={heading}>
+                {ALL_NETWORKS.filter((n) => n.kind === kind).map((n) => (
+                  <li key={n.id} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" style={{ borderColor: `${n.color}55`, color: n.color, background: `${n.color}12` }}>
+                    <span className="h-2 w-2 rounded-full" style={{ background: n.color }} aria-hidden />
+                    {n.label}
+                  </li>
+                ))}
+                {kind === "host" && <li className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm font-semibold text-muted">+ any other operator</li>}
+              </ul>
+            </div>
+          ))}
+          <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <h3 className="font-bold">🔌 Every plug</h3>
+              <p className="mt-1 text-muted">NACS / Tesla, CCS, CHAdeMO and J1772, so you only see chargers your car can use.</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <h3 className="font-bold">⚡ Every speed</h3>
+              <p className="mt-1 text-muted">Level 1 and Level 2 for overnight stops, DC fast from 50 kW, and ultra-fast 150 to 400 kW for road trips, with the top speed shown on each stop.</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-background p-4">
+              <h3 className="font-bold">💲 Price up front</h3>
+              <p className="mt-1 text-muted">Free or paid, the published rate per kWh or per minute, and any session, idle, parking or membership fees, as reported by the network.</p>
+            </div>
+          </div>
         </div>
       </section>
 

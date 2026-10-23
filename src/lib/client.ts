@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApiEnvelope, CategoryId, Charger, GeoResult, Hotel, LatLng, Place, RouteResult } from "./types";
+import type { ApiEnvelope, CategoryId, Charger, GeoResult, Hotel, LatLng, Place, RouteResult, Happening } from "./types";
 
 export type Area = { route: LatLng[]; radiusMiles: number } | { center: LatLng; radiusMiles: number };
 
@@ -22,11 +22,14 @@ export async function geocodeClient(q: string): Promise<ApiEnvelope<GeoResult[]>
   return json as ApiEnvelope<GeoResult[]>;
 }
 
-export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | string) =>
-  post<RouteResult>("/api/route", { origin, destination });
+export const fetchRoute = (origin: GeoResult | string, destination: GeoResult | string, via: GeoResult[] = []) =>
+  post<RouteResult>("/api/route", { origin, destination, via });
 
 export const fetchPlaces = (area: Area, categories: CategoryId[]) =>
   post<Place[]>("/api/places", { ...area, categories });
+
+export type EventQuery = { from?: string; to?: string; kinds?: string[] };
+export const fetchHappenings = (area: Area, q: EventQuery = {}) => post<Happening[]>("/api/happenings", { ...area, ...q });
 
 export type ChargerQuery = { networks?: string[]; connectors?: string[]; minKw?: number; cost?: "any" | "free" | "paid"; superchargersOnly?: boolean };
 export const fetchChargers = (area: Area, q: ChargerQuery = {}) => post<Charger[]>("/api/chargers", { ...area, ...q });

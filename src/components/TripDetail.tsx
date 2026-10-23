@@ -3,11 +3,13 @@
 import { Disclosure } from "./Disclosure";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PlaceCard } from "./Cards";
+import { Itinerary } from "./Itinerary";
+import { TripSuggestions } from "./TripSuggestions";
+import { stopsFor, type ItineraryView } from "@/lib/itinerary";
 import { SendToPhone } from "./SendToPhone";
 import { ShareButtons } from "./ShareButtons";
 import { TripMap } from "./TripMap";
-import { Badge, Button, Empty, ErrorNote } from "./ui";
+import { Badge, Button, ErrorNote } from "./ui";
 import { useTrip } from "@/hooks/useTrip";
 import { fmtDuration, fmtMiles } from "@/lib/geo";
 import { deleteTrip, fmtDate, isHistory, removeStop, shareTrip, updateTrip, type TripRecord } from "@/lib/trips-client";
@@ -23,6 +25,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [view, setView] = useState<ItineraryView>("route");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const shareUrl = `${origin}/t/${trip.shareToken}`;
@@ -49,7 +52,7 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
       route: trip.routeGeometry
         ? { source: "live", geometry: trip.routeGeometry, distanceMiles: trip.distanceMiles ?? 0, durationMinutes: trip.durationMinutes ?? 0, origin: trip.origin, destination: trip.destination }
         : undefined,
-      activeTrip: { id: trip.id, name: trip.name },
+      activeTrip: { id: trip.id, name: trip.name, startDate: trip.startDate, endDate: trip.endDate },
     });
     router.push("/app");
   }
@@ -181,38 +184,26 @@ export function TripDetail({ initial, origin }: { initial: TripRecord; origin: s
           {inviteMsg && <p className="mt-1 text-xs text-muted">{inviteMsg}</p>}
         </Disclosure>
 
-        <Disclosure id="trip-stops" title={<>Stops <span className="text-sm font-normal text-muted">({trip.stops.length})</span></>} summary="Stops hidden" bodyClassName="mt-2">
-          {trip.stops.length === 0 ? (
-            <Empty>No stops yet. Use “Find stops along this route” and tap “Add to trip” on anything you like.</Empty>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {trip.stops.map((s) => (
-                <PlaceCard
-                  key={s.id}
-                  place={s}
-                  selected={selected === s.id}
-                  onClick={() => setSelected(s.id)}
-                  action={
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-coral hover:underline"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const t = await run(() => removeStop(trip.id, s.id));
-                        if (t) setTrip(t);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  }
-                />
-              ))}
-            </ul>
-          )}
-        </Disclosure>
+        {!past && <TripSuggestions trip={trip} onAdded={setTrip} />}
+        <Itinerary
+          trip={trip}
+          view={view}
+          onView={(v) => { setView(v); setSelected(null); }}
+          selected={selected}
+          onSelect={setSelected}
+          busy={busy}
+          onChangeStops={async (stops) => {
+            const r = await run(() => updateTrip(trip.id, { stops }));
+            if (r) setTrip(r);
+          }}
+          onRemove={async (placeId) => {
+            const t = await run(() => removeStop(trip.id, placeId));
+            if (t) setTrip(t);
+          }}
+        />
       </section>
       <section className="relative min-h-0 flex-1 h-[50vh] md:h-auto">
-        <TripMap route={trip.routeGeometry} stops={trip.stops} selectedId={selected} onSelect={setSelected} />
+        <TripMap route={view === "route" ? trip.routeGeometry : null} stops={stopsFor(trip, view)} selectedId={selected} onSelect={setSelected} />
       </section>
     </div>
   );

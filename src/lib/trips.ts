@@ -84,9 +84,9 @@ export async function deleteTrip(userId: string, id: string): Promise<boolean> {
 }
 
 /** Add a place to the trip's stop list (idempotent by place id), computing its mile marker. */
-export function withStop(trip: Trip, place: Place, note?: string): TripStop[] {
+export function withStop(trip: Trip, place: Place, note?: string, day?: string): TripStop[] {
   if (trip.stops.some((s) => s.id === place.id)) return trip.stops;
-  const stop: TripStop = { ...place, addedAt: new Date().toISOString(), note };
+  const stop: TripStop = { ...place, addedAt: new Date().toISOString(), note, day: day && day >= trip.startDate && day <= trip.endDate ? day : undefined };
   if (trip.routeGeometry && trip.routeGeometry.length > 1) {
     const d = distanceToRoute(place, indexRoute(trip.routeGeometry));
     stop.alongMiles = d.alongMiles;

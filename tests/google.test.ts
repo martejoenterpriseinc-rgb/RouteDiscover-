@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GOOGLE_TYPES, categoryForTypes, samplePoints, toPlace } from "../src/lib/providers/google";
+import { GOOGLE_TYPES, KNOWN_GOOGLE_TYPES, categoryForTypes, samplePoints, toPlace } from "../src/lib/providers/google";
 
 test("every category maps to at least one Google place type", () => {
-  for (const [cat, types] of Object.entries(GOOGLE_TYPES)) assert.ok(types.length > 0, cat);
+  for (const [cat, types] of Object.entries(GOOGLE_TYPES)) {
+    assert.ok(types.length > 0, cat);
+    assert.ok(types.some((t) => KNOWN_GOOGLE_TYPES.has(t)), `${cat} has at least one type Google accepts`);
+  }
   assert.equal(categoryForTypes(["restaurant", "food", "point_of_interest"]), "food");
   assert.equal(categoryForTypes(["campground"]), "campgrounds");
   assert.equal(categoryForTypes(["point_of_interest"]), null);

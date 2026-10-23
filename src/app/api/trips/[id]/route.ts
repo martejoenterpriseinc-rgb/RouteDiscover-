@@ -54,7 +54,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
         .map((s) => {
           const cur = byId.get(String(s.id));
           if (!cur) return null;
-          return { ...cur, note: typeof s.note === "string" ? s.note.slice(0, 500) : cur.note, day: typeof s.day === "string" && DATE_RE.test(s.day) ? s.day : cur.day };
+          const day = s.day === null ? undefined : typeof s.day === "string" && DATE_RE.test(s.day) ? s.day : cur.day;
+          const time = s.time === null ? undefined : typeof s.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(s.time) ? s.time : cur.time;
+          return { ...cur, note: typeof s.note === "string" ? s.note.slice(0, 500) : cur.note, day, time };
         })
         .filter((s): s is NonNullable<typeof s> => !!s);
     }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { EventQueue } from "@/components/EventQueue";
 import { SubmissionRow } from "@/components/SubmissionRow";
 import { Badge, Button, Empty, ErrorNote } from "@/components/ui";
 import type { QueueItem } from "@/lib/business-client";
@@ -52,6 +53,7 @@ export default function ModerationPage() {
           Every customer update lands here. Flagged ones are held until you decide; the rest can also be approved by the business owner. Approving hours or corrections changes the listing; approving reviews, photos, menus and specials makes them visible.
         </p>
       </div>
+      <EventQueue />
       {counts && (
         <div className="flex flex-wrap gap-2 text-sm">
           <Badge tone="tesla">{counts.flagged} held for audit</Badge>

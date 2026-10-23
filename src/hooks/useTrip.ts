@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import type { Preferences } from "@/db/schema";
 import { simplifyTo } from "@/lib/geo";
-import type { GeoResult, RouteResult } from "@/lib/types";
+import type { GeoResult, Place, RouteResult } from "@/lib/types";
 
 export type Trip = {
   origin?: GeoResult;
@@ -11,8 +11,10 @@ export type Trip = {
   radiusMiles: number;
   radiusTouched?: boolean;
   route?: RouteResult;
+  /** Places the traveller ticked to drive through, kept in mile order along the route. */
+  stops?: Place[];
   /** Saved trip currently being planned (stops get added to it). */
-  activeTrip?: { id: string; name: string };
+  activeTrip?: { id: string; name: string; startDate?: string; endDate?: string };
   /** Signed-in user's preferences, seeded by the app layout. */
   preferences?: Preferences;
 };
@@ -59,6 +61,6 @@ export function useTrip() {
     }
     save(next);
   }, []);
-  const clearRoute = useCallback(() => save({ ...load(), route: undefined }), []);
+  const clearRoute = useCallback(() => save({ ...load(), route: undefined, stops: undefined }), []);
   return { trip, update, clearRoute };
 }

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s · RouteDiscover",
   },
   description:
-    "Discover what's worth stopping for along your drive: attractions, food, Tesla Superchargers, and hotels with EV charging, all within the miles you choose.",
+    "Discover what's worth stopping for along your drive: attractions, food, EV charging on every network, and hotels with chargers, all within the miles you choose.",
   applicationName: "RouteDiscover",
   appleWebApp: { capable: true, title: "RouteDiscover", statusBarStyle: "default" },
   openGraph: {

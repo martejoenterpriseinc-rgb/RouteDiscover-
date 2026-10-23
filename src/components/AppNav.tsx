@@ -10,10 +10,12 @@ import { ThemeToggle } from "./ThemeToggle";
 const TABS = [
   { href: "/app/home", label: "Home", icon: "🏠" },
   { href: "/app", label: "Route", icon: "🛣️" },
+  { href: "/app/around", label: "Around me", icon: "📡" },
   { href: "/app/destination", label: "Destination", icon: "📍" },
   { href: "/app/charging", label: "Charging", icon: "⚡" },
   { href: "/app/hotels", label: "Stays", icon: "🏨" },
   { href: "/app/trips", label: "Trips", icon: "🗓️" },
+  { href: "/app/events", label: "Events", icon: "🎟️" },
 ] as const;
 
 const MORE = [

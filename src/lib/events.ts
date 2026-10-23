@@ -35,7 +35,9 @@ export type EventType =
   | "account_requested"
   | "account_request_approved"
   | "account_request_declined"
-  | "page_view";
+  | "page_view"
+  | "event_submitted"
+  | "event_moderated";
 
 export async function track(
   type: EventType,
