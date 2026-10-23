@@ -131,6 +131,10 @@ export function PreferencesForm({ initial }: { initial: Preferences }) {
           </div>
         </div>
         <PlaceInput label="Home (used as a quick starting point)" placeholder="City or address" value={p.home} onChange={(v: GeoResult | undefined) => set("home", v)} />
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Mobile number (for “send to phone” texts)</span>
+          <input className={field} type="tel" placeholder="+1 217 555 0123" value={p.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
+        </label>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={p.marketingOptIn} onChange={(e) => set("marketingOptIn", e.target.checked)} className="h-4 w-4" />
           Email me trip ideas and product updates

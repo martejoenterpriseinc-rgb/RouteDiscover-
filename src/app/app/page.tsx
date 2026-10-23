@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { SendToPhone } from "@/components/SendToPhone";
+import { fetchRoute } from "@/lib/client";
 import Link from "next/link";
 import { ActiveTripBanner, AddToTripButton } from "@/components/AddToTrip";
 import { Wordmark } from "@/components/AppNav";
@@ -22,8 +25,9 @@ import type { CategoryId, Place } from "@/lib/types";
 
 const NO_PLACES: Place[] = [];
 
-export default function RoutePage() {
-  const { trip } = useTrip();
+function RoutePageInner() {
+  const { trip, update } = useTrip();
+  const params = useSearchParams();
   const geo = useGeolocation();
   const [categories, setCategories] = useState<CategoryId[]>(DEFAULT_ROUTE_CATEGORIES);
   // Seed the category chips from saved preferences once they arrive.
@@ -38,6 +42,37 @@ export default function RoutePage() {
 
   const route = trip.route;
   const routeKey = route ? `${route.origin.lat},${route.origin.lng}>${route.destination.lat},${route.destination.lng}` : "";
+
+  // A link like /app?o=41.88,-87.63&d=40.04,-76.31&r=10 plans the route on open (used by "send to phone").
+  const linkKey = `${params.get("o") ?? ""}|${params.get("d") ?? ""}|${params.get("r") ?? ""}`;
+  useEffect(() => {
+    const [o, d, r] = linkKey.split("|");
+    const parse = (v: string) => {
+      const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(v);
+      return m ? { lat: Number(m[1]), lng: Number(m[2]) } : null;
+    };
+    const op = parse(o);
+    const dp = parse(d);
+    if (!op || !dp) return;
+    let cancelled = false;
+    const origin = { label: params.get("ol") || `${op.lat.toFixed(3)}, ${op.lng.toFixed(3)}`, ...op };
+    const destination = { label: params.get("dl") || `${dp.lat.toFixed(3)}, ${dp.lng.toFixed(3)}`, ...dp };
+    fetchRoute(origin, destination)
+      .then((res) => {
+        if (cancelled) return;
+        update({ origin, destination, radiusMiles: Number(r) || trip.radiusMiles, radiusTouched: !!r, route: { ...res.data, source: res.source } });
+        window.history.replaceState(null, "", "/app");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkKey]);
+
+  const routeLink = route
+    ? `/app?o=${route.origin.lat.toFixed(5)},${route.origin.lng.toFixed(5)}&d=${route.destination.lat.toFixed(5)},${route.destination.lng.toFixed(5)}&r=${trip.radiusMiles}&ol=${encodeURIComponent(route.origin.label)}&dl=${encodeURIComponent(route.destination.label)}`
+    : null;
   const searchKey = route && categories.length ? `${routeKey}|${trip.radiusMiles}|${categories.join(",")}` : "";
 
   const search = useSearch(
@@ -83,6 +118,7 @@ export default function RoutePage() {
           🗓️ Save this route as a trip
         </Link>
       )}
+      {route && routeLink && <SendToPhone path={routeLink} title={`${route.origin.label} → ${route.destination.label}`} compact />}
       {route && (
         <>
           <SourceBanner source={search.source} notice={search.notice} />
@@ -144,5 +180,13 @@ export default function RoutePage() {
         />
       }
     />
+  );
+}
+
+export default function RoutePage() {
+  return (
+    <Suspense>
+      <RoutePageInner />
+    </Suspense>
   );
 }

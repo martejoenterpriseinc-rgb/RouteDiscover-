@@ -141,6 +141,19 @@ export default function OwnerIntegrationsPage() {
         <Field label="API key" value={i.email.apiKey} onChange={(v) => set("email", { apiKey: v })} secret wide />
       </Section>
 
+      <Section title="Text messages (send to phone)" subtitle="Optional. With Twilio connected, “Text me” sends the link from your number. Without it, the button opens the user's own messaging app and the QR code always works, both free." aside={<TestButton target="sms" />}>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Provider</span>
+          <select className={field} value={i.sms.provider} onChange={(e) => set("sms", { provider: e.target.value as I["sms"]["provider"] })}>
+            <option value="none">None (device messaging app + QR)</option>
+            <option value="twilio">Twilio</option>
+          </select>
+        </label>
+        <Field label="From number" value={i.sms.from} onChange={(v) => set("sms", { from: v })} placeholder="+12175550123" />
+        <Field label="Account SID" value={i.sms.accountSid} onChange={(v) => set("sms", { accountSid: v })} placeholder="AC…" />
+        <Field label="Auth token" value={i.sms.authToken} onChange={(v) => set("sms", { authToken: v })} secret />
+      </Section>
+
       <Section
         title="Custom APIs"
         subtitle="Connect anything else: App Store Connect, Google Play reporting, a CRM, analytics, hotel booking partners. Stored securely and available to future features."

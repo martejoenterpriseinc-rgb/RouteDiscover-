@@ -98,6 +98,8 @@ export type AppSettings = {
     geocoding: { nominatimUrl: string };
     tiles: { url: string; attribution: string };
     email: { provider: "none" | "resend"; apiKey: string; from: string };
+    /** Optional server-sent texts (Twilio). Without it, "send to phone" uses QR codes and the device's own messaging app. */
+    sms: { provider: "none" | "twilio"; accountSid: string; authToken: string; from: string };
     custom: CustomApi[];
   };
 };
@@ -109,6 +111,7 @@ export const SECRET_PATHS = [
   "integrations.google.serverKey",
   "integrations.openChargeMap.apiKey",
   "integrations.email.apiKey",
+  "integrations.sms.authToken",
 ] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -215,6 +218,7 @@ Privacy questions: see the support address on our website.`,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     },
     email: { provider: "none", apiKey: "", from: "" },
+    sms: { provider: "none", accountSid: "", authToken: "", from: "" },
     custom: [],
   },
 };
@@ -296,6 +300,12 @@ function withEnvFallback(s: AppSettings): AppSettings {
         provider: i.email.provider !== "none" ? i.email.provider : env.RESEND_API_KEY ? "resend" : "none",
         apiKey: i.email.apiKey || env.RESEND_API_KEY || "",
         from: i.email.from || env.EMAIL_FROM || "",
+      },
+      sms: {
+        provider: i.sms.provider !== "none" ? i.sms.provider : env.TWILIO_ACCOUNT_SID ? "twilio" : "none",
+        accountSid: i.sms.accountSid || env.TWILIO_ACCOUNT_SID || "",
+        authToken: i.sms.authToken || env.TWILIO_AUTH_TOKEN || "",
+        from: i.sms.from || env.TWILIO_FROM || "",
       },
     },
   };

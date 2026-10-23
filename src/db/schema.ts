@@ -62,6 +62,8 @@ export type Preferences = {
   home?: GeoResult;
   walkRadius: number;
   marketingOptIn: boolean;
+  /** Mobile number for "send to phone" texts (E.164, e.g. +12175550123). */
+  phone?: string;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
