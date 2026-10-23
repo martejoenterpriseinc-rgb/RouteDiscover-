@@ -34,7 +34,8 @@ export type EventType =
   | "send_to_phone"
   | "account_requested"
   | "account_request_approved"
-  | "account_request_declined";
+  | "account_request_declined"
+  | "page_view";
 
 export async function track(
   type: EventType,

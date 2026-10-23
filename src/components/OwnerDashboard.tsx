@@ -62,6 +62,43 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
         </Disclosure>
       )}
 
+      <Disclosure id="dash-traffic" title="Web traffic" size="sm" bodyClassName="mt-2 flex flex-col gap-3">
+        {!s.traffic.tracked && <p className="text-xs text-muted">Page views are recorded from the moment this version went live; numbers fill in as people visit.</p>}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Page views" value={compact(s.traffic.pageViews)} sub={`last ${r} days · ${s.traffic.viewsPerVisitor} per visitor`} trend={s.series.pageViews} accent />
+          <StatTile label="Unique visitors" value={compact(s.traffic.visitors)} sub={`${s.traffic.signedInVisitors} signed in · ${Math.max(0, s.traffic.visitors - s.traffic.signedInVisitors)} anonymous`} trend={s.series.visitors} />
+          <StatTile label="Landing page" value={compact(s.acquisition.landingViews)} sub={`${s.acquisition.landingVisitors} visitors`} trend={s.series.landingViews} />
+          <StatTile label="Top device" value={s.traffic.devices[0]?.label ?? "—"} sub={s.traffic.devices.map((d) => `${d.label} ${s.traffic.pageViews ? Math.round((d.value / s.traffic.pageViews) * 100) : 0}%`).join(" · ") || "no data yet"} />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <LineChart title={`Page views vs. unique visitors (last ${r} days)`} series={[{ name: "Page views", points: s.series.pageViews }, { name: "Visitors", points: s.series.visitors }]} />
+          <BarList title="Top pages" rows={s.traffic.topPages.length ? s.traffic.topPages : [{ label: "No page views yet", value: 0 }]} />
+          <BarList title="Where visitors come from" rows={s.traffic.referrers.length ? s.traffic.referrers : [{ label: "No referrer data yet", value: 0 }]} />
+          <BarList title="Campaigns (UTM tags)" rows={s.traffic.campaigns.length ? s.traffic.campaigns : [{ label: "No tagged links yet — add ?utm_source=… to links you share", value: 0 }]} />
+        </div>
+      </Disclosure>
+
+      <Disclosure id="dash-conversion" title="Conversion" size="sm" bodyClassName="mt-2 flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile label="Visitor → account" value={`${s.conversion.visitorToSignupPct}%`} sub={`${s.conversion.signups} accounts from ${s.conversion.visitors || s.conversion.landingVisitors} visitors`} accent />
+          {s.setup.signupMode === "approval" && <StatTile label="Visitor → request" value={`${s.conversion.visitorToRequestPct}%`} sub={`${s.conversion.accountRequests} account requests`} />}
+          <StatTile label="Sign-up page → account" value={`${s.conversion.signupPageToSignupPct}%`} sub={`${s.conversion.signupPageVisitors} reached the sign-up page`} />
+          <StatTile label="Account → paid" value={`${s.conversion.signupToPaidPct}%`} sub={`${s.conversion.paid} paid in the last ${r} days`} />
+          <StatTile label="Visitor → paid" value={`${s.conversion.visitorToPaidPct}%`} sub="end-to-end" />
+        </div>
+        <BarList
+          title={`Funnel (last ${r} days)`}
+          rows={[
+            { label: "Unique visitors", value: s.conversion.visitors || s.conversion.landingVisitors },
+            { label: "Landing page visitors", value: s.conversion.landingVisitors },
+            { label: "Reached sign-up page", value: s.conversion.signupPageVisitors },
+            ...(s.setup.signupMode === "approval" ? [{ label: "Requested an account", value: s.conversion.accountRequests }] : []),
+            { label: "Created an account", value: s.conversion.signups },
+            { label: "Paid", value: s.conversion.paid },
+          ]}
+        />
+      </Disclosure>
+
       <Disclosure id="dash-revenue" title="Revenue" size="sm" bodyClassName="mt-2">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {s.passes.model === "pass" ? (
