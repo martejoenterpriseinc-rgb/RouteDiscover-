@@ -59,7 +59,7 @@ The **first account created becomes the owner**. Owner pages live under `/owner`
 
 ### Mobile apps
 
-The web app ships a manifest and icons, so it installs to iOS and Android home screens today. For the App Store and Google Play, wrap the same app with [Capacitor](https://capacitorjs.com/): `npx cap init`, point it at the deployed URL (or a static export), add the `ios` and `android` platforms, and submit. The API routes, accounts and billing are shared, so nothing is duplicated. Once the apps are listed, paste the store URLs into **Owner → Pricing & app** and the landing page badges go live; store download counts can be connected from App Store Connect and Google Play Console through **Integrations → Custom APIs**.
+The web app ships a manifest and icons, so it installs to iOS and Android home screens today. For the App Store and Google Play, the repo includes a [Capacitor](https://capacitorjs.com/) wrapper (`capacitor.config.ts`) that loads the live site: run `npx cap add ios` / `npx cap add android` on a machine with Xcode / Android Studio, then `npm run cap:sync`. Step-by-step instructions, required permissions, and store-listing requirements are in [docs/mobile-apps.md](docs/mobile-apps.md). Once the apps are listed, paste the store URLs into **Owner → Pricing & app** and the landing page badges go live.
 
 ## Data sources
 
