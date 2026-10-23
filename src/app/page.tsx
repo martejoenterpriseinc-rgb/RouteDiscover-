@@ -25,7 +25,9 @@ export default async function LandingPage() {
   if (user) redirect("/app");
   const s = await getLiveSettings();
   const stats = await getPublicStats();
-  const open = (await checkSignup(false)).open;
+  const gate = await checkSignup(false);
+  const open = gate.open;
+  const byApproval = !open && gate.reason === "request";
   const anonId = (await cookies()).get("rd_anon")?.value ?? null;
   void track("landing_view", { anonId });
 
@@ -50,6 +52,8 @@ export default async function LandingPage() {
             <Link href="/login" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
             {open ? (
               <Link href="/signup" className="whitespace-nowrap rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
+            ) : byApproval ? (
+              <Link href="/signup" className="whitespace-nowrap rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Request an account</Link>
             ) : (
               <span className="whitespace-nowrap rounded-full border border-orange/50 bg-surface px-4 py-1.5 text-orange">Coming soon</span>
             )}
@@ -71,6 +75,10 @@ export default async function LandingPage() {
               {open ? (
                 <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
                   {s.pricing.trialEnabled && s.pricing.trialDays > 0 ? `Start your ${s.pricing.trialDays}-day free trial` : s.pricing.model === "pass" ? `Get a ${s.pricing.passDays}-day pass` : "Get started"}
+                </Link>
+              ) : byApproval ? (
+                <Link href="/signup" className="rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-base font-semibold text-white shadow-lg">
+                  Request an account
                 </Link>
               ) : (
                 <span className="rounded-xl border border-orange/50 bg-surface px-6 py-3 text-base font-semibold text-orange">{s.access.closedTitle}</span>
@@ -142,6 +150,10 @@ export default async function LandingPage() {
             {open ? (
               <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
                 Create your account
+              </Link>
+            ) : byApproval ? (
+              <Link href="/signup" className="mt-6 block rounded-xl bg-gradient-to-r from-coral to-orange px-6 py-3 text-center text-base font-semibold text-white shadow-lg">
+                Request an account
               </Link>
             ) : (
               <p className="mt-6 rounded-xl border border-orange/50 bg-cream px-6 py-3 text-center text-sm font-semibold text-orange">{s.access.closedMessage}</p>

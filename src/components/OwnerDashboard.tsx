@@ -32,7 +32,7 @@ export function OwnerDashboard({ stats }: { stats: OwnerStats }) {
   const s = stats;
   const r = s.rangeDays;
   const setupItems = [
-    { ok: s.setup.signupsOpen, label: s.setup.signupsOpen ? "Sign-ups open to the public" : "Sign-ups closed (open them when you're ready to launch)", href: "/owner/settings" },
+    { ok: s.setup.signupMode !== "closed", label: s.setup.signupMode === "open" ? "Sign-ups open to the public" : s.setup.signupMode === "approval" ? `Sign-ups by approval${s.users.pendingRequests ? ` (${s.users.pendingRequests} waiting)` : ""}` : "Sign-ups closed (open them when you're ready to launch)", href: s.setup.signupMode === "approval" ? "/owner/users" : "/owner/settings" },
     { ok: s.setup.stripeConnected, label: "Stripe connected", href: "/owner/integrations" },
     { ok: s.setup.priceSynced, label: s.passes.model === "pass" ? "Pass price synced to Stripe" : "Monthly price synced to Stripe", href: "/owner/settings" },
     { ok: s.setup.webhookSecret, label: "Stripe webhook secret saved", href: "/owner/integrations" },

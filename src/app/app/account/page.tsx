@@ -46,7 +46,9 @@ export default async function AccountPage() {
               {access.cancelAtPeriodEnd && <Badge tone="paid">Cancels at period end</Badge>}
             </div>
             <p className="text-sm text-muted">
-              {formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}{s.pricing.model === "pass" ? ` per ${s.pricing.passDays}-day pass` : "/month"}
+              {access.complimentary && access.allowed
+                ? access.kind === "trial" ? "Free trial" : "Complimentary pass, no charge"
+                : `${formatPrice(s.pricing.monthlyPriceCents, s.pricing.currency)}${s.pricing.model === "pass" ? ` per ${s.pricing.passDays}-day pass` : "/month"}`}
               {access.currentPeriodEnd ? ` · ${access.kind === "subscription" ? "renews" : "ends"} ${new Date(access.currentPeriodEnd).toLocaleDateString()}` : ""}
             </p>
             {access.creditCents > 0 && <p className="text-sm font-semibold text-green">🎁 {formatPrice(access.creditCents, s.pricing.currency)} referral credit ready for your next checkout</p>}

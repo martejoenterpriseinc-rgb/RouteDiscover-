@@ -397,6 +397,29 @@ export const apiUsage = pgTable(
   (t) => [uniqueIndex("api_usage_idx").on(t.month, t.provider, t.kind)],
 );
 
+/** People who asked for an account while sign-ups are by approval. */
+export const accountRequests = pgTable(
+  "account_requests",
+  {
+    id: id(),
+    email: text("email").notNull(),
+    name: text("name").notNull().default(""),
+    note: text("note").notNull().default(""),
+    status: text("status").$type<"pending" | "approved" | "declined">().notNull().default("pending"),
+    /** Complimentary days granted when the account is created (0 = they pay like everyone else). */
+    freeDays: integer("free_days").notNull().default(0),
+    /** sha256 of the invite token in the approval link */
+    tokenHash: text("token_hash"),
+    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
+    emailSent: boolean("email_sent").notNull().default(false),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decidedBy: text("decided_by"),
+    acceptedUserId: text("accepted_user_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("account_requests_email_idx").on(t.email), index("account_requests_status_idx").on(t.status)],
+);
+
 export const passwordResets = pgTable(
   "password_resets",
   {
