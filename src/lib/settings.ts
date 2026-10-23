@@ -100,8 +100,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   app: {
     name: "RouteDiscover",
     tagline: "Find everything worth stopping for along your drive.",
-    supportEmail: "",
-    websiteUrl: "",
+    supportEmail: "hello@routediscover.com",
+    websiteUrl: "https://routediscover.com",
     appStoreUrl: "",
     playStoreUrl: "",
     socialX: "",

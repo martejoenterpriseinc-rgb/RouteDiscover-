@@ -17,7 +17,7 @@ export const config = {
   /** Identify ourselves to the public OSM services, as their usage policies ask. */
   userAgent:
     process.env.ROUTEDISCOVER_USER_AGENT ||
-    "RouteDiscover/0.1 (https://github.com/martejoenterpriseinc-rgb/RouteDiscover-)",
+    "RouteDiscover/0.1 (+https://routediscover.com)",
   fetchTimeoutMs: Number(process.env.ROUTEDISCOVER_FETCH_TIMEOUT_MS || 25000),
 };
 

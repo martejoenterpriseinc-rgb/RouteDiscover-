@@ -102,6 +102,26 @@ npm run check      # lint + typecheck + test
 npx drizzle-kit generate   # after changing src/db/schema.ts
 ```
 
+## Deploying to routediscover.com
+
+The app runs anywhere Node 22 and Postgres run. A [Render Blueprint](render.yaml) is included: in Render choose **New → Blueprint**, point it at this repository, and it creates the web service and database with `APP_SECRET` generated for you.
+
+Then connect the domain:
+
+1. In the Render web service, open **Settings → Custom Domains** and add `routediscover.com` and `www.routediscover.com`. Render shows the DNS targets and issues the TLS certificate once DNS resolves.
+2. At GoDaddy (**My Products → DNS** for routediscover.com), add the records Render shows. Typically:
+
+   | Type | Name | Value |
+   | --- | --- | --- |
+   | A | `@` | the IP Render shows for the apex (currently `216.24.57.1`) |
+   | CNAME | `www` | `<your-service>.onrender.com` |
+
+   Delete GoDaddy's default "Parked" A record and any conflicting CNAME on `www`. DNS usually propagates within an hour.
+3. Keep `NEXT_PUBLIC_SITE_URL=https://routediscover.com` (already in the blueprint) so share links, invite emails, Stripe return URLs and the sitemap use the domain.
+4. Open https://routediscover.com, create the first account (it becomes the owner), then enter Stripe and Google keys under Owner → Integrations and press Go live. For Stripe, the webhook endpoint is `https://routediscover.com/api/billing/webhook`.
+
+Email for `@routediscover.com` (support address, invite emails via Resend) needs the sending domain verified in Resend; add the DNS records it provides at GoDaddy as well.
+
 ## Project layout
 
 ```

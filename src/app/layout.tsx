@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://routediscover.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "RouteDiscover",
     template: "%s · RouteDiscover",
@@ -13,9 +16,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "RouteDiscover",
     description: "Find everything worth stopping for along your route.",
+    url: SITE_URL,
+    siteName: "RouteDiscover",
     images: ["/brand/og.png"],
     type: "website",
   },
+  twitter: { card: "summary_large_image", title: "RouteDiscover", description: "Find everything worth stopping for along your route.", images: ["/brand/og.png"] },
+  alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = {
