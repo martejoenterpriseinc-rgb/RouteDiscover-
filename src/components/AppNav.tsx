@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const TABS = [
   { href: "/app", label: "Route", icon: "🛣️" },
@@ -40,7 +41,7 @@ export function AppNav({ user }: { user: NavUser }) {
       <header className="sticky top-0 z-[1100] border-b border-border bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
           <Link href="/app" className="flex items-center gap-2" aria-label="RouteDiscover home">
-            <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="h-10 w-auto" />
+            <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="brand-mark h-10 w-auto" />
             <Wordmark className="text-xl" />
           </Link>
           <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Primary">
@@ -60,6 +61,7 @@ export function AppNav({ user }: { user: NavUser }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:ml-2">
+            <ThemeToggle compact className="hidden sm:inline-flex" />
             <Link href="/app/referrals" className="hidden rounded-full border border-green/50 bg-green/10 px-3 py-1 text-xs font-semibold text-green hover:bg-green hover:text-white sm:block">
               🎁 Refer & earn
             </Link>

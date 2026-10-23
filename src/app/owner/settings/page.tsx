@@ -7,6 +7,7 @@ import type { AppSettings } from "@/lib/settings";
 
 export default function OwnerSettingsPage() {
   const c = useOwnerConsole();
+  const [access, setAccess] = useState<AppSettings["access"] | null>(null);
   const [app, setApp] = useState<AppSettings["app"] | null>(null);
   const [pricing, setPricing] = useState<AppSettings["pricing"] | null>(null);
   const [price, setPrice] = useState("4.99");
@@ -23,6 +24,7 @@ export default function OwnerSettingsPage() {
   const [seededFrom, setSeededFrom] = useState<typeof c.state>(null);
   if (c.state && c.state !== seededFrom) {
     setSeededFrom(c.state);
+    setAccess(c.state.draft.access);
     setApp(c.state.draft.app);
     setPricing(c.state.draft.pricing);
     setPrice((c.state.draft.pricing.monthlyPriceCents / 100).toFixed(2));
@@ -36,10 +38,11 @@ export default function OwnerSettingsPage() {
     setSponsorPrice((c.state.draft.business.sponsorPriceCents / 100).toFixed(2));
   }
 
-  if (!app || !pricing || !biz || !ref || !legal) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
+  if (!access || !app || !pricing || !biz || !ref || !legal) return <p className="text-sm text-muted">{c.error ?? "Loading…"}</p>;
 
   const save = () =>
     c.save({
+      access: { ...access, defaultFreeDays: Math.max(0, Math.min(365, Math.round(Number(access.defaultFreeDays) || 0))) },
       app,
       pricing: {
         ...pricing,
@@ -70,6 +73,47 @@ export default function OwnerSettingsPage() {
         <h1 className="text-2xl font-extrabold tracking-tight">Pricing & app</h1>
         <p className="text-sm text-muted">What subscribers pay and what the landing page says. Save as a draft, then go live.</p>
       </div>
+
+      <Section
+        title="Sign-ups"
+        subtitle="Control who can create an account. Existing users, including you, can always sign in. Save, then go live for the change to take effect."
+        aside={
+          <Badge tone={access.mode === "open" ? "free" : access.mode === "approval" ? "blue" : "paid"}>
+            {access.mode === "open" ? "Open to everyone" : access.mode === "approval" ? "By approval" : "Closed"}
+          </Badge>
+        }
+      >
+        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-3">
+          {(
+            [
+              ["open", "Open", "Anyone can create an account. The landing page shows its sign-up buttons."],
+              ["approval", "By approval", "Visitors request an account. You approve each one from Users, with or without complimentary days."],
+              ["closed", "Closed", "Nobody can sign up. The landing page shows your “coming soon” message instead."],
+            ] as const
+          ).map(([mode, label, help]) => (
+            <label key={mode} className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-3 text-sm ${access.mode === mode ? "border-blue bg-blue/5" : "border-border bg-background"}`}>
+              <span className="flex items-center gap-2 font-semibold">
+                <input type="radio" name="signup-mode" className="h-4 w-4" checked={access.mode === mode} onChange={() => setAccess({ ...access, mode })} />
+                {label}
+              </span>
+              <span className="text-xs text-muted">{help}</span>
+            </label>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" className="h-4 w-4" disabled={access.mode === "open"} checked={access.allowInvited} onChange={(e) => setAccess({ ...access, allowInvited: e.target.checked })} />
+          While not open, still allow people who arrive through an invite or referral link
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Complimentary days pre-filled when you approve</span>
+          <input className={field} type="number" min="0" max="365" value={access.defaultFreeDays} onChange={(e) => setAccess({ ...access, defaultFreeDays: Number(e.target.value) })} />
+          <span className="mt-1 block text-xs text-muted">0 means approved people pay like everyone else. You can change it per person when approving.</span>
+        </label>
+        <Field label="Request form headline (by approval)" value={access.requestTitle} onChange={(v) => setAccess({ ...access, requestTitle: v })} />
+        <Field label="Request form message (by approval)" value={access.requestMessage} onChange={(v) => setAccess({ ...access, requestMessage: v })} wide />
+        <Field label="Headline shown while closed" value={access.closedTitle} onChange={(v) => setAccess({ ...access, closedTitle: v })} />
+        <Field label="Message shown while closed" value={access.closedMessage} onChange={(v) => setAccess({ ...access, closedMessage: v })} wide />
+      </Section>
 
       <Section
         title="Traveler pricing"

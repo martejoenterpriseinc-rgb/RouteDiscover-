@@ -18,6 +18,19 @@ export type CustomApi = {
 };
 
 export type AppSettings = {
+  /** Who may create an account. The very first account (the owner) is always allowed. */
+  access: {
+    /** open: anyone. approval: visitors request an account and the owner approves. closed: nobody. */
+    mode: "open" | "approval" | "closed";
+    /** While not open, still let people who arrive through an invite or referral link sign up. */
+    allowInvited: boolean;
+    closedTitle: string;
+    closedMessage: string;
+    requestTitle: string;
+    requestMessage: string;
+    /** Complimentary days pre-filled on the approve button (0 = approved users pay like everyone else). */
+    defaultFreeDays: number;
+  };
   app: {
     name: string;
     tagline: string;
@@ -115,6 +128,15 @@ export const SECRET_PATHS = [
 ] as const;
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  access: {
+    mode: "closed",
+    allowInvited: false,
+    closedTitle: "We're almost ready",
+    closedMessage: "RouteDiscover is putting the finishing touches on the app. Sign-ups open soon — check back shortly.",
+    requestTitle: "Request an account",
+    requestMessage: "We're letting people in a few at a time. Tell us a little about your trips and we'll email you when your account is ready.",
+    defaultFreeDays: 30,
+  },
   app: {
     name: "RouteDiscover",
     tagline: "Find everything worth stopping for along your drive.",

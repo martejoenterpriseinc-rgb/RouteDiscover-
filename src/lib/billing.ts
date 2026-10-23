@@ -21,6 +21,8 @@ export type Access = {
   currentPeriodEnd: string | null;
   daysLeft: number | null;
   cancelAtPeriodEnd: boolean;
+  /** The current pass or trial was granted free (owner approval, trial). */
+  complimentary: boolean;
   /** Has paid at least once (passes or subscription). Drives referral eligibility. */
   paid: boolean;
   creditCents: number;
@@ -76,6 +78,7 @@ export async function getAccess(user: User): Promise<Access> {
     trialDays: s.pricing.trialDays,
     status: (sub?.status ?? "none") as Access["status"],
     kind: (sub?.kind ?? "none") as Access["kind"],
+    complimentary: !!sub && sub.kind !== "subscription" && sub.amountCents === 0,
     currentPeriodEnd: end?.toISOString() ?? null,
     daysLeft: end ? Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86400_000)) : null,
     cancelAtPeriodEnd: sub?.cancelAtPeriodEnd ?? false,

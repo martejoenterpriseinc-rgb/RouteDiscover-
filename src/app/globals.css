@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+/* Day / night / auto: the root layout resolves the choice into data-theme="light|dark" on <html>
+   before first paint (see src/lib/theme.ts), so every dark rule keys off that attribute and
+   Tailwind's dark: variant does the same. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* RouteDiscover brand palette (pulled from the logo) */
 :root {
   --background: #fbfaf7;
@@ -17,15 +22,17 @@
   --cream: #fff4e6;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f1526;
-    --foreground: #eef1f7;
-    --surface: #182038;
-    --muted: #a3acc2;
-    --border: #2a3350;
-    --cream: #2a2230;
-  }
+:root {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0f1526;
+  --foreground: #eef1f7;
+  --surface: #182038;
+  --muted: #a3acc2;
+  --border: #2a3350;
+  --cream: #2a2230;
 }
 
 @theme inline {
@@ -69,10 +76,8 @@ body {
 .wordmark .discover {
   color: var(--blue);
 }
-@media (prefers-color-scheme: dark) {
-  .wordmark .route {
-    color: #c9d3f5;
-  }
+[data-theme="dark"] .wordmark .route {
+  color: #c9d3f5;
 }
 
 /* Leaflet overrides */
@@ -122,6 +127,25 @@ input[type="range"] {
 }
 .hide-scrollbar {
   scrollbar-width: none;
+}
+
+/* Brand images: the mark and logo have transparent backgrounds. On dark screens the navy
+   road and wordmark would sink into the page, so the pin gets a soft light halo and the
+   full logo sits on a light plate so it looks exactly as designed. */
+.brand-mark {
+  display: inline-block;
+}
+.brand-plate {
+  display: inline-block;
+}
+[data-theme="dark"] .brand-mark {
+  filter: drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+}
+[data-theme="dark"] .brand-plate {
+  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #fff8ee 70%, #ffeeda 100%);
+  border-radius: 24%;
+  padding: 6%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* Wordmark on dark surfaces (owner console header) */

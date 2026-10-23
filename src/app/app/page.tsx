@@ -98,7 +98,7 @@ function RoutePageInner() {
     <>
       {!route && (
         <div className="flex flex-col items-center gap-2 rounded-xl bg-gradient-to-br from-cream to-surface p-4 text-center">
-          <Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={160} height={160} priority className="h-28 w-28" />
+          <span className="brand-plate"><Image src="/brand/routediscover-logo.png" alt="RouteDiscover" width={160} height={160} priority className="h-28 w-28" /></span>
           <h1 className="text-lg">
             <Wordmark className="text-2xl" />
           </h1>

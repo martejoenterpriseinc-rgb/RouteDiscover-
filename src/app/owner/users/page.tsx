@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import { Badge } from "@/components/ui";
+import { AccountRequests } from "@/components/AccountRequests";
 import { UserActions } from "@/components/UserActions";
+import { listAccountRequests } from "@/lib/account-requests";
+import { getLiveSettings } from "@/lib/settings";
 import { listUsersForOwner } from "@/lib/stats";
 
 export const metadata: Metadata = { title: "Users" };
 
 export default async function OwnerUsersPage() {
-  const users = await listUsersForOwner();
+  const [users, requests, s] = await Promise.all([listUsersForOwner(), listAccountRequests(), getLiveSettings()]);
   const tone = (st: string) => (st === "active" || st === "trialing" ? "free" : st === "none" ? "neutral" : "paid");
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight">Users</h1>
+      <AccountRequests requests={requests} defaultFreeDays={s.access.defaultFreeDays} mode={s.access.mode} />
       <p className="text-sm text-muted">{users.length} accounts, newest first.</p>
       <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
         <table className="w-full text-sm">

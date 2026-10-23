@@ -1,4 +1,5 @@
 import "server-only";
+import { pendingRequestCount } from "./account-requests";
 import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { referralProgramStats, type ReferralProgramStats } from "./referrals";
@@ -8,7 +9,7 @@ export type DailyPoint = { day: string; value: number };
 export type OwnerStats = {
   generatedAt: string;
   rangeDays: number;
-  users: { total: number; newInRange: number; new7d: number; active1d: number; active7d: number; active30d: number };
+  users: { total: number; newInRange: number; new7d: number; active1d: number; active7d: number; active30d: number; pendingRequests: number };
   subscriptions: { active: number; trialing: number; pastDue: number; canceled: number; cancelingAtPeriodEnd: number; mrrCents: number; priceCents: number; currency: string; churnRatePct: number; conversionPct: number };
   acquisition: { landingViews: number; landingVisitors: number; storeClicksIos: number; storeClicksAndroid: number; pwaInstallClicks: number; pwaInstalled: number; visitorToSignupPct: number; invitesSent: number; invitesAccepted: number; referredSignups: number };
   engagement: { trips: number; tripsInRange: number; tripsCompleted: number; tripsShared: number; stops: number; shares: number; logins: number };
@@ -17,7 +18,7 @@ export type OwnerStats = {
   businesses: { listings: number; claimed: number; claimedInRange: number; basic: number; sponsors: number; revenueCents: number; revenueInRangeCents: number; pendingSubmissions: number; flaggedSubmissions: number; submissionsInRange: number; approvedInRange: number; rejectedInRange: number };
   series: { signups: DailyPoint[]; landingViews: DailyPoint[]; subscriptionsStarted: DailyPoint[]; downloads: DailyPoint[] };
   recent: Array<{ id: number; type: string; userEmail: string | null; meta: Record<string, unknown>; createdAt: string }>;
-  setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean };
+  setup: { stripeConnected: boolean; priceSynced: boolean; webhookSecret: boolean; storeLinks: boolean; emailConnected: boolean; requireSubscription: boolean; signupMode: "open" | "approval" | "closed" };
 };
 
 const dayKey = sql<string>`to_char(${schema.events.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`;
@@ -156,7 +157,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
   return {
     generatedAt: new Date().toISOString(),
     rangeDays,
-    users: { total: usersTotal, newInRange, new7d, active1d, active7d, active30d },
+    users: { total: usersTotal, newInRange, new7d, active1d, active7d, active30d, pendingRequests: await pendingRequestCount() },
     subscriptions: { active, trialing, pastDue, canceled, cancelingAtPeriodEnd, mrrCents, priceCents: s.pricing.monthlyPriceCents, currency: s.pricing.currency, churnRatePct, conversionPct },
     acquisition: { landingViews, landingVisitors, storeClicksIos, storeClicksAndroid, pwaInstallClicks, pwaInstalled, visitorToSignupPct, invitesSent, invitesAccepted, referredSignups },
     engagement: { trips, tripsInRange, tripsCompleted, tripsShared, stops, shares, logins },
@@ -177,6 +178,7 @@ export async function getOwnerStats(rangeDays = 30): Promise<OwnerStats> {
       storeLinks: !!(s.app.appStoreUrl || s.app.playStoreUrl),
       emailConnected: s.integrations.email.provider !== "none" && !!s.integrations.email.apiKey,
       requireSubscription: s.pricing.requireSubscription,
+      signupMode: s.access.mode,
     },
   };
 }

@@ -31,7 +31,10 @@ export type EventType =
   | "trial_started"
   | "referral_payment"
   | "referral_rewarded"
-  | "send_to_phone";
+  | "send_to_phone"
+  | "account_requested"
+  | "account_request_approved"
+  | "account_request_declined";
 
 export async function track(
   type: EventType,

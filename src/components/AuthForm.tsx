@@ -5,15 +5,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Wordmark } from "./AppNav";
-import { Button, ErrorNote } from "./ui";
+import { Button, ErrorNote, PasswordInput } from "./ui";
 
-function Form({ mode }: { mode: "login" | "signup" }) {
+function Form({ mode, invite = "", presetEmail = "" }: { mode: "login" | "signup"; invite?: string; presetEmail?: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/app";
   const ref = params.get("ref") || "";
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(presetEmail);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ function Form({ mode }: { mode: "login" | "signup" }) {
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mode === "signup" ? { name, email, password, referral: ref } : { email, password }),
+        body: JSON.stringify(mode === "signup" ? { name, email, password, referral: ref, invite: invite || undefined } : { email, password }),
       });
       const j = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(j.error || "Something went wrong.");
@@ -42,10 +42,11 @@ function Form({ mode }: { mode: "login" | "signup" }) {
   return (
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex flex-col items-center gap-1 text-center">
-        <Image src="/brand/mark.png" alt="" width={48} height={58} className="h-14 w-auto" priority />
+        <Image src="/brand/mark.png" alt="" width={48} height={58} className="brand-mark h-14 w-auto" priority />
         <Wordmark className="text-2xl" />
         <h1 className="mt-2 text-lg font-semibold">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
         {mode === "signup" && ref && <p className="text-xs text-muted">Invited with code {ref}</p>}
+        {mode === "signup" && invite && <p className="rounded-full bg-green/10 px-3 py-1 text-xs font-semibold text-green">Your account request was approved</p>}
       </div>
       {mode === "signup" && (
         <label className="text-sm">
@@ -55,13 +56,12 @@ function Form({ mode }: { mode: "login" | "signup" }) {
       )}
       <label className="text-sm">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Email</span>
-        <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+        <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" readOnly={!!presetEmail} />
       </label>
       <label className="text-sm">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted">Password</span>
-        <input
+        <PasswordInput
           className={field}
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -94,11 +94,11 @@ function Form({ mode }: { mode: "login" | "signup" }) {
   );
 }
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({ mode, invite, presetEmail }: { mode: "login" | "signup"; invite?: string; presetEmail?: string }) {
   return (
     <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-cream to-background p-4">
       <Suspense>
-        <Form mode={mode} />
+        <Form mode={mode} invite={invite} presetEmail={presetEmail} />
       </Suspense>
     </div>
   );

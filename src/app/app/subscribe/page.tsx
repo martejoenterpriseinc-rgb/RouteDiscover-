@@ -18,7 +18,7 @@ export default async function SubscribePage() {
     <div className="flex flex-1 items-center justify-center bg-gradient-to-br from-cream to-background p-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-xl">
         <div className="flex flex-col items-center text-center">
-          <Image src="/brand/mark.png" alt="" width={56} height={67} className="h-16 w-auto" />
+          <Image src="/brand/mark.png" alt="" width={56} height={67} className="brand-mark h-16 w-auto" />
           <Wordmark className="text-2xl" />
           <h1 className="mt-4 text-xl font-bold">
             {s.pricing.model === "pass" ? (access.allowed ? "Your pass" : access.reason === "expired" ? "Your pass has ended" : `Get your ${s.pricing.passDays}-day pass`) : access.status === "none" ? "Start your subscription" : "Your subscription"}
