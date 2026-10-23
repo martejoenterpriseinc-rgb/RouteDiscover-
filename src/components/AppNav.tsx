@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from "./ThemeToggle";
 
 const TABS = [
   { href: "/app", label: "Route", icon: "🛣️" },
@@ -60,6 +61,7 @@ export function AppNav({ user }: { user: NavUser }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:ml-2">
+            <ThemeToggle compact className="hidden sm:inline-flex" />
             <Link href="/app/referrals" className="hidden rounded-full border border-green/50 bg-green/10 px-3 py-1 text-xs font-semibold text-green hover:bg-green hover:text-white sm:block">
               🎁 Refer & earn
             </Link>

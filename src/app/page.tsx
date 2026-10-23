@@ -8,6 +8,7 @@ import { KpiStrip } from "@/components/KpiStrip";
 import { getCurrentUser } from "@/lib/auth";
 import { track } from "@/lib/events";
 import { getPublicStats } from "@/lib/public-stats";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { checkSignup } from "@/lib/access";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
 
@@ -44,19 +45,13 @@ export default async function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/brand/mark.png" alt="" width={36} height={43} priority className="brand-mark h-10 w-auto" />
-            <Wordmark className="text-xl" />
+            <Wordmark className="text-lg sm:text-xl" />
           </Link>
-          <nav className="ml-auto flex items-center gap-2 text-sm font-semibold">
+          <nav className="ml-auto flex shrink-0 items-center gap-2 text-sm font-semibold">
             <a href="#features" className="hidden px-3 text-muted hover:text-foreground md:block">Features</a>
             <a href="#pricing" className="hidden px-3 text-muted hover:text-foreground md:block">Pricing</a>
-            <Link href="/login" className="whitespace-nowrap rounded-full px-3 py-1.5 text-muted hover:bg-cream hover:text-foreground">Sign in</Link>
-            {open ? (
-              <Link href="/signup" className="whitespace-nowrap rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Start free trial</Link>
-            ) : byApproval ? (
-              <Link href="/signup" className="whitespace-nowrap rounded-full bg-gradient-to-r from-coral to-orange px-4 py-1.5 text-white shadow">Request an account</Link>
-            ) : (
-              <span className="whitespace-nowrap rounded-full border border-orange/50 bg-surface px-4 py-1.5 text-orange">Coming soon</span>
-            )}
+            <ThemeToggle compact />
+            <Link href="/login" className="whitespace-nowrap rounded-full border border-border bg-surface px-3 py-1.5 text-foreground hover:bg-cream sm:px-4">Sign in</Link>
           </nav>
         </div>
       </header>

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { getAccess } from "@/lib/billing";
 import { formatPrice, getLiveSettings } from "@/lib/settings";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { siteOrigin } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Account" };
@@ -39,6 +40,9 @@ export default async function AccountPage() {
       <div className="grid gap-4 md:grid-cols-[1fr_1.4fr]">
         <div className="flex flex-col gap-4">
           <ProfileForm name={user.name} email={user.email} memberSince={user.createdAt.toLocaleDateString("en-US", { month: "long", year: "numeric" })} />
+          <Card title="Appearance" subtitle="Day, night, or follow your device. Remembered on this device.">
+            <ThemeToggle />
+          </Card>
           <Card title="Subscription">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={statusTone}>{statusLabel}</Badge>

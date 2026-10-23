@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "./AppNav";
+import { ThemeToggle } from "./ThemeToggle";
 
 const TABS = [
   { href: "/owner", label: "Dashboard" },
@@ -34,6 +35,7 @@ export function OwnerNav({ email }: { email: string }) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-3 text-xs text-white/80">
+          <ThemeToggle compact onDark />
           <span className="hidden sm:inline">{email}</span>
           <Link href="/app" className="rounded-full border border-white/40 px-3 py-1 font-semibold hover:bg-white/10">
             Open app →
