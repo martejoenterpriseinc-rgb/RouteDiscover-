@@ -122,27 +122,35 @@ export default async function LandingPage() {
         <div className="mx-auto w-full max-w-6xl px-4 py-12">
           <h2 className="text-center text-3xl font-extrabold tracking-tight">Every charging network, one search</h2>
           <p className="mx-auto mt-2 max-w-2xl text-center text-muted">
-            RouteDiscover shows public chargers from every network it finds along your route, near you or at your destination, and anything it doesn&apos;t recognise is listed under the operator&apos;s own name, so nothing is left out.
+            Public chargers from every network along your route, near you or at your destination.
           </p>
-          {(
-            [
-              ["network", "Charging networks"],
-              ["host", "Gas stations, travel centers and stores that host chargers"],
-            ] as const
-          ).map(([kind, heading]) => (
-            <div key={kind} className="mt-6">
-              <h3 className="text-center text-xs font-semibold uppercase tracking-wide text-muted">{heading}</h3>
-              <ul className="mt-2 flex flex-wrap justify-center gap-2" aria-label={heading}>
-                {ALL_NETWORKS.filter((n) => n.kind === kind).map((n) => (
-                  <li key={n.id} className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" style={{ borderColor: `${n.color}55`, color: n.color, background: `${n.color}12` }}>
-                    <span className="h-2 w-2 rounded-full" style={{ background: n.color }} aria-hidden />
-                    {n.label}
-                  </li>
-                ))}
-                {kind === "host" && <li className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm font-semibold text-muted">+ any other operator</li>}
-              </ul>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-sm">
+            <span className="font-semibold">Including</span> Tesla, Electrify America, EVgo, ChargePoint, Blink, Rivian, IONNA, Shell Recharge, bp pulse and chargers at Buc-ee&apos;s, Pilot, Love&apos;s, Wawa, Sheetz, Walmart and more.
+          </p>
+          <details className="group mx-auto mt-3 max-w-3xl text-sm">
+            <summary className="cursor-pointer list-none text-center font-semibold text-blue hover:underline">
+              <span className="group-open:hidden">See all {ALL_NETWORKS.length} networks and hosts</span>
+              <span className="hidden group-open:inline">Hide the list</span>
+            </summary>
+            <div className="mt-4 grid gap-6 sm:grid-cols-2">
+              {(
+                [
+                  ["network", "Charging networks"],
+                  ["host", "Gas stations, travel centers and stores"],
+                ] as const
+              ).map(([kind, heading]) => (
+                <div key={kind}>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{heading}</h3>
+                  <ul className="mt-2 columns-2 gap-4 text-muted" aria-label={heading}>
+                    {ALL_NETWORKS.filter((n) => n.kind === kind).map((n) => (
+                      <li key={n.id} className="break-inside-avoid py-0.5">{n.label}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
-          ))}
+            <p className="mt-3 text-center text-xs text-muted">Anything else shows up under the operator&apos;s own name.</p>
+          </details>
           <div className="mt-8 grid gap-4 text-sm sm:grid-cols-3">
             <div className="rounded-2xl border border-border bg-background p-4">
               <h3 className="font-bold">🔌 Every plug</h3>
